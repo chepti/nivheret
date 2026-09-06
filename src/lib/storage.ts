@@ -4,6 +4,13 @@ import type { AppData, Session } from "./types";
 const DATA_KEY = "nivheret-data-v1";
 const SESSION_KEY = "nivheret-session-v1";
 
+function unionById<T extends { id: string }>(preferred: T[] | undefined, extra: T[]): T[] {
+  const map = new Map<string, T>();
+  for (const item of extra) map.set(item.id, item);
+  for (const item of preferred ?? []) map.set(item.id, item);
+  return [...map.values()];
+}
+
 function mergeSeed(saved: AppData | null): AppData {
   const seed = createSeed();
   if (!saved) return seed;
@@ -13,9 +20,9 @@ function mergeSeed(saved: AppData | null): AppData {
     institutions: saved.institutions?.length ? saved.institutions : seed.institutions,
     teachers: saved.teachers?.length ? saved.teachers : seed.teachers,
     periods: saved.periods?.length ? saved.periods : seed.periods,
-    tools: saved.tools ?? seed.tools,
-    capabilities: saved.capabilities ?? seed.capabilities,
-    lessons: saved.lessons ?? seed.lessons,
+    tools: unionById(saved.tools, seed.tools),
+    capabilities: unionById(saved.capabilities, seed.capabilities),
+    lessons: unionById(saved.lessons, seed.lessons),
     responses: saved.responses ?? [],
     reactions: saved.reactions ?? [],
     meetings: saved.meetings ?? seed.meetings,

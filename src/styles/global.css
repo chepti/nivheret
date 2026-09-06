@@ -521,6 +521,66 @@ p { margin: 0 0 10px; color: var(--muted); line-height: 1.55; }
 .grow { flex: 1; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
+.rich-wrap {
+  border: 1px solid #f3ead6;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #fff;
+}
+.rich-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  background: #fffaf0;
+  border-bottom: 1px solid #f3ead6;
+}
+.rich-bar button {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+}
+.rich-bar button:hover { background: #ffe56a; }
+.rich-box {
+  min-height: 180px;
+  padding: 12px 14px;
+  outline: none;
+}
+.rich-box:empty:before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+}
+.lesson-html p { margin: 0 0 10px; color: var(--ink); }
+.lesson-html h2 { font-size: 1.15rem; margin: 14px 0 8px; }
+.lesson-html img { max-width: 100%; border-radius: 16px; display: block; margin: 10px 0; }
+.lesson-html ul, .lesson-html ol { padding-inline-start: 22px; margin: 8px 0; }
+.lesson-html a { text-decoration: underline; }
+
+.chapter-list { padding: 14px 16px; margin: 10px 0 14px; }
+.chapter-list h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.05rem;
+  margin: 0 0 8px;
+}
+.chapter-list ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.chapter-list button {
+  width: 100%;
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  text-align: right;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: #fffaf0;
+}
+.chapter-list button.on { background: #ffe56a; }
+.chapter-time { min-width: 3.4em; color: var(--muted); font-size: 0.82rem; }
+
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }

@@ -10,6 +10,7 @@ import {
 import { earnedBadgeIds, normalizeBadge } from "../lib/badges";
 import { completeGoogleRedirect, firebaseEnabled, signInWithGoogle, signOutGoogle } from "../lib/firebase";
 import { emptyResponse } from "../lib/status";
+import { createSeed } from "../data/seed";
 import { loadData, loadSession, saveData, saveSession } from "../lib/storage";
 import {
   deleteTeacher,
@@ -50,6 +51,13 @@ function isContentPart(part: Partial<AppData>): boolean {
 
 function newerStamp(a?: string, b?: string): boolean {
   return Boolean(a && (!b || a > b));
+}
+
+function unionById<T extends { id: string }>(preferred: T[] | undefined, extra: T[]): T[] {
+  const map = new Map<string, T>();
+  for (const item of extra) map.set(item.id, item);
+  for (const item of preferred ?? []) map.set(item.id, item);
+  return [...map.values()];
 }
 
 function mergeResponses(local: CapabilityResponse[], remote: CapabilityResponse[]): CapabilityResponse[] {
@@ -135,16 +143,41 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           const recovered = keepLocalContent
             ? { ...local, settings: { ...local.settings, contentUpdatedAt: new Date().toISOString() } }
             : null;
-          setDataState((prev) => ({
-            ...(recovered ?? prev),
-            ...(keepLocalContent ? {} : remote),
-            teachers: remote.teachers?.length ? remote.teachers : prev.teachers,
-            badges: (keepLocalContent ? prev.badges : remote.badges ?? prev.badges).map(normalizeBadge),
-            responses: mergeResponses(prev.responses, remote.responses ?? []),
-            rsvps: remote.rsvps ?? prev.rsvps,
-            reactions: remote.reactions ?? prev.reactions,
-            pairs: remote.pairs ?? prev.pairs,
-          }));
+          const seed = createSeed();
+          setDataState((prev) => {
+            const sourceCaps = keepLocalContent ? prev.capabilities : remote.capabilities ?? prev.capabilities;
+            const sourceLessons = keepLocalContent ? prev.lessons : remote.lessons ?? prev.lessons;
+            const sourceTools = keepLocalContent ? prev.tools : remote.tools ?? prev.tools;
+            const capabilities = unionById(sourceCaps, seed.capabilities);
+            const lessons = unionById(sourceLessons, seed.lessons);
+            const tools = unionById(sourceTools, seed.tools);
+            const merged = {
+              ...(recovered ?? prev),
+              ...(keepLocalContent ? {} : remote),
+              teachers: remote.teachers?.length ? remote.teachers : prev.teachers,
+              badges: (keepLocalContent ? prev.badges : remote.badges ?? prev.badges).map(normalizeBadge),
+              responses: mergeResponses(prev.responses, remote.responses ?? []),
+              rsvps: remote.rsvps ?? prev.rsvps,
+              reactions: remote.reactions ?? prev.reactions,
+              pairs: remote.pairs ?? prev.pairs,
+              capabilities,
+              lessons,
+              tools,
+            };
+            if (
+              !recovered &&
+              (lessons.length > (remote.lessons?.length ?? 0) || capabilities.length > (remote.capabilities?.length ?? 0))
+            ) {
+              skipRemoteContent.current = true;
+              void pushContent({ ...merged, settings: { ...merged.settings, contentUpdatedAt: new Date().toISOString() } })
+                .finally(() => {
+                  window.setTimeout(() => {
+                    skipRemoteContent.current = false;
+                  }, 400);
+                });
+            }
+            return merged;
+          });
           if (recovered) {
             skipRemoteContent.current = true;
             void pushContent(recovered)
@@ -165,13 +198,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           if (skipRemoteContent.current && isContentPart(part) && !("responses" in part) && !("teachers" in part)) {
             return;
           }
-          setDataState((prev) => ({
-            ...prev,
-            ...(skipRemoteContent.current && isContentPart(part) ? {} : part),
-            ...("responses" in part && part.responses
-              ? { responses: mergeResponses(prev.responses, part.responses) }
-              : {}),
-          }));
+          setDataState((prev) => {
+            const seed = createSeed();
+            const incoming = skipRemoteContent.current && isContentPart(part) ? {} : part;
+            const lessons = incoming.lessons ? unionById(incoming.lessons, seed.lessons) : undefined;
+            const capabilities = incoming.capabilities ? unionById(incoming.capabilities, seed.capabilities) : undefined;
+            const tools = incoming.tools ? unionById(incoming.tools, seed.tools) : undefined;
+            return {
+              ...prev,
+              ...incoming,
+              ...(lessons ? { lessons } : {}),
+              ...(capabilities ? { capabilities } : {}),
+              ...(tools ? { tools } : {}),
+              ...("responses" in part && part.responses
+                ? { responses: mergeResponses(prev.responses, part.responses) }
+                : {}),
+            };
+          });
         });
       } catch (err) {
         console.error("Firebase sync", err);

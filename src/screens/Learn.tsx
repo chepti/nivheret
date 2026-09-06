@@ -1,16 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bookmark, Heart, PartyPopper } from "lucide-react";
 import { navigate, type Route } from "../app/router";
 import { useStore } from "../app/store";
 import { ClayIcon, ItemThumb } from "../components/ClayIcons";
 import { GoogleGate } from "../components/GoogleGate";
 import { ImagePaste } from "../components/ImagePaste";
+import { VideoChapters } from "../components/VideoChapters";
+import { embedWithStart, lessonHtml } from "../lib/html";
 
 export function Learn({ route }: { route: Route }) {
   const { data, responseOf, upsertResponse, upsertReaction, session } = useStore();
   const [quizOk, setQuizOk] = useState<Record<string, boolean>>({});
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [celebrate, setCelebrate] = useState(false);
+  const [videoStart, setVideoStart] = useState(0);
+  useEffect(() => {
+    setVideoStart(0);
+  }, [route.id]);
 
   if (!session) return null;
 
@@ -50,12 +56,24 @@ export function Learn({ route }: { route: Route }) {
         </div>
         {lesson.videoUrl && (
           <div className="clay" style={{ overflow: "hidden", aspectRatio: "16/9", margin: "12px 0" }}>
-            <iframe title={lesson.title} src={lesson.videoUrl} style={{ width: "100%", height: "100%", border: 0 }} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+            <iframe
+              key={`${lesson.id}-${videoStart}`}
+              title={lesson.title}
+              src={embedWithStart(lesson.videoUrl, videoStart)}
+              style={{ width: "100%", height: "100%", border: 0 }}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
           </div>
         )}
-        <div className="clay" style={{ padding: 18 }}>
-          <p style={{ color: "var(--ink)" }}>{lesson.body}</p>
-        </div>
+        {!!lesson.chapters?.length && (
+          <VideoChapters
+            chapters={lesson.chapters}
+            active={videoStart}
+            onPick={(t) => setVideoStart(t)}
+          />
+        )}
+        <div className="clay lesson-html" style={{ padding: 18 }} dangerouslySetInnerHTML={{ __html: lessonHtml(lesson.body) }} />
         {lesson.quiz.map((q) => (
           <div key={q.id} className="clay" style={{ padding: 16, marginTop: 12 }}>
             <strong>{q.prompt}</strong>

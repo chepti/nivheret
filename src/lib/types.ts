@@ -53,12 +53,18 @@ export type QuizQuestion = {
   correctIndex: number;
 };
 
+export type VideoChapter = {
+  t: number;
+  label: string;
+};
+
 export type Lesson = {
   id: string;
   capabilityId: string;
   title: string;
   body: string;
   videoUrl?: string;
+  chapters?: VideoChapter[];
   quiz: QuizQuestion[];
   autoCompleteOnQuiz: boolean;
 };

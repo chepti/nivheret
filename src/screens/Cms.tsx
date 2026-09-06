@@ -5,6 +5,8 @@ import { GoogleGate } from "../components/GoogleGate";
 import { ClayIcon } from "../components/ClayIcons";
 import { CloudSyncIcon } from "../components/CloudSyncIcon";
 import { ImagePaste } from "../components/ImagePaste";
+import { RichTextEditor } from "../components/RichTextEditor";
+import { formatChapterText, parseChapterText, toEmbedUrl } from "../lib/html";
 import { METRIC_OPTIONS, normalizeBadge } from "../lib/badges";
 import { newId } from "../lib/storage";
 import type { BadgeDef, BadgeMetric, Capability, Lesson, Meeting, Teacher, Tool } from "../lib/types";
@@ -283,11 +285,25 @@ export function Cms() {
                   <Field label="כותרת השיעור">
                     <input className="field" value={l.title} onChange={(e) => patchLesson(l.id, { title: e.target.value })} />
                   </Field>
-                  <Field label="תוכן">
-                    <textarea className="field tall" value={l.body} onChange={(e) => patchLesson(l.id, { body: e.target.value })} />
+                  <div className="cms-field">
+                    <span>תוכן</span>
+                    <RichTextEditor lessonId={l.id} value={l.body} onChange={(body) => patchLesson(l.id, { body })} />
+                  </div>
+                  <Field label="קישור סרטון (יוטיוב או embed)">
+                    <input
+                      className="field"
+                      dir="ltr"
+                      value={l.videoUrl ?? ""}
+                      onChange={(e) => patchLesson(l.id, { videoUrl: toEmbedUrl(e.target.value) })}
+                    />
                   </Field>
-                  <Field label="קישור סרטון (embed)">
-                    <input className="field" dir="ltr" value={l.videoUrl ?? ""} onChange={(e) => patchLesson(l.id, { videoUrl: e.target.value })} />
+                  <Field label="פרקים מהתיאור (שורה: 0:00 כותרת)">
+                    <textarea
+                      className="field tall"
+                      placeholder={"00:00 פתיחה\n01:20 השלב הבא"}
+                      value={formatChapterText(l.chapters ?? [])}
+                      onChange={(e) => patchLesson(l.id, { chapters: parseChapterText(e.target.value) })}
+                    />
                   </Field>
                   {l.quiz.map((quiz, qi) => (
                     <div key={quiz.id}>
