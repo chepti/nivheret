@@ -9,7 +9,8 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { getFirebase } from "./firebase";
-import { unionLessons } from "./storage";
+import { materializeContentImages } from "./media";
+import { unionCapabilities, unionLessons } from "./storage";
 import type {
   AppData,
   CapabilityResponse,
@@ -78,11 +79,13 @@ export async function seedIfEmpty(data: AppData): Promise<boolean> {
 export async function pushContent(data: AppData): Promise<void> {
   const fb = getFirebase();
   if (!fb) return;
+  const prepared = await materializeContentImages(data);
   const snap = await getDoc(doc(fb.db, "content", "app"));
-  const remoteLessons = snap.exists() ? ((snap.data() as ContentDoc).lessons ?? []) : [];
+  const remote = snap.exists() ? (snap.data() as ContentDoc) : null;
   await setDoc(doc(fb.db, "content", "app"), {
-    ...contentFrom(data),
-    lessons: unionLessons(data.lessons, remoteLessons),
+    ...contentFrom(prepared),
+    capabilities: unionCapabilities(prepared.capabilities, remote?.capabilities ?? []),
+    lessons: unionLessons(prepared.lessons, remote?.lessons ?? []),
   });
 }
 
@@ -152,7 +155,7 @@ export function watchShared(onChange: (part: Partial<AppData>) => void): () => v
 }
 
 function contentFrom(data: AppData): ContentDoc {
-  return {
+  return JSON.parse(JSON.stringify({
     institutions: data.institutions,
     periods: data.periods,
     tools: data.tools,
@@ -161,5 +164,5 @@ function contentFrom(data: AppData): ContentDoc {
     meetings: data.meetings,
     badges: data.badges,
     settings: data.settings,
-  };
+  })) as ContentDoc;
 }

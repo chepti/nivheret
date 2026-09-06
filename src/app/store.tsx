@@ -10,7 +10,7 @@ import {
 import { earnedBadgeIds, normalizeBadge } from "../lib/badges";
 import { completeGoogleRedirect, firebaseEnabled, signInWithGoogle, signOutGoogle } from "../lib/firebase";
 import { emptyResponse } from "../lib/status";
-import { dropUnwantedContent, loadData, loadSession, normalizeContent, saveData, saveSession, unionLessons } from "../lib/storage";
+import { dropUnwantedContent, loadData, loadSession, normalizeContent, saveData, saveSession, unionCapabilities, unionLessons } from "../lib/storage";
 import {
   deleteTeacher,
   pullRemote,
@@ -141,14 +141,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           const recovered = keepLocalContent
             ? normalizeContent({
                 ...local,
+                capabilities: unionCapabilities(local.capabilities ?? [], remote.capabilities ?? []),
                 lessons: unionLessons(local.lessons ?? [], remote.lessons ?? []),
                 settings: { ...local.settings, contentUpdatedAt: new Date().toISOString() },
               })
             : null;
-          const mergedLessons = unionLessons(local.lessons ?? [], remote.lessons ?? []);
           const remoteClean = normalizeContent({
-            capabilities: remote.capabilities ?? local.capabilities,
-            lessons: mergedLessons,
+            capabilities: unionCapabilities(local.capabilities ?? [], remote.capabilities ?? []),
+            lessons: unionLessons(local.lessons ?? [], remote.lessons ?? []),
           });
           const stripped =
             JSON.stringify(remote.capabilities ?? []) !== JSON.stringify(remoteClean.capabilities) ||
@@ -209,6 +209,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             };
             if (incoming.lessons) {
               next.lessons = unionLessons(prev.lessons, incoming.lessons);
+            }
+            if (incoming.capabilities) {
+              next.capabilities = unionCapabilities(prev.capabilities, incoming.capabilities);
             }
             return incoming.capabilities || incoming.lessons ? dropUnwantedContent(next) : next;
           });

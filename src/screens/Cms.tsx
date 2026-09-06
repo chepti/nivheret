@@ -8,6 +8,7 @@ import { ImagePaste } from "../components/ImagePaste";
 import { RichTextEditor } from "../components/RichTextEditor";
 import { formatChapterText, parseChapterText, toEmbedUrl } from "../lib/html";
 import { METRIC_OPTIONS, normalizeBadge } from "../lib/badges";
+import { uploadCmsImage } from "../lib/media";
 import { newId } from "../lib/storage";
 import type { BadgeDef, BadgeMetric, Capability, Lesson, Meeting, Teacher, Tool } from "../lib/types";
 
@@ -212,7 +213,15 @@ export function Cms() {
                           maxEdge={200}
                           value={tool.image}
                           hint="Ctrl+V או קובץ"
-                          onChange={(image) => patchTool(tool.id, { image: image || undefined })}
+                          onChange={(image) => {
+                            if (!image) {
+                              patchTool(tool.id, { image: undefined });
+                              return;
+                            }
+                            void uploadCmsImage("tools", tool.id, image)
+                              .then((url) => patchTool(tool.id, { image: url }))
+                              .catch(() => patchTool(tool.id, { image }));
+                          }}
                         />
                       </Field>
                     </div>
@@ -278,7 +287,15 @@ export function Cms() {
                                 maxEdge={200}
                                 value={c.image}
                                 hint="Ctrl+V או קובץ"
-                                onChange={(image) => patchCap(c.id, { image: image || undefined })}
+                                onChange={(image) => {
+                                  if (!image) {
+                                    patchCap(c.id, { image: undefined });
+                                    return;
+                                  }
+                                  void uploadCmsImage("capabilities", c.id, image)
+                                    .then((url) => patchCap(c.id, { image: url }))
+                                    .catch(() => patchCap(c.id, { image }));
+                                }}
                               />
                             </Field>
                           </div>
@@ -470,7 +487,15 @@ export function Cms() {
                     value={b.image}
                     maxEdge={240}
                     hint="לחצי בתיבה ואז Ctrl+V, או גררי PNG. הרקע נשאר שקוף."
-                    onChange={(image) => patchBadge(b.id, { image: image || undefined })}
+                    onChange={(image) => {
+                      if (!image) {
+                        patchBadge(b.id, { image: undefined });
+                        return;
+                      }
+                      void uploadCmsImage("badges", b.id, image)
+                        .then((url) => patchBadge(b.id, { image: url }))
+                        .catch(() => patchBadge(b.id, { image }));
+                    }}
                   />
                 </Field>
                 <button className="small" onClick={() => setData((d) => ({ ...d, badges: d.badges.filter((x) => x.id !== b.id) }))}>מחיקת באדג׳</button>

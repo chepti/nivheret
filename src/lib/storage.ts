@@ -1,5 +1,5 @@
 import { createSeed } from "../data/seed";
-import type { AppData, Lesson, Session } from "./types";
+import type { AppData, Capability, Lesson, Session } from "./types";
 
 const DATA_KEY = "nivheret-data-v1";
 const SESSION_KEY = "nivheret-session-v1";
@@ -82,11 +82,26 @@ export function dropUnwantedContent<T extends Pick<AppData, "capabilities" | "le
 }
 
 /** שיעור מקומי גובר על אותו מזהה בענן — כדי לא למחוק עריכה. */
-export function unionLessons(local: Lesson[] = [], remote: Lesson[] = []): Lesson[] {
-  const map = new Map<string, Lesson>();
-  for (const lesson of remote) map.set(lesson.id, lesson);
-  for (const lesson of local) map.set(lesson.id, lesson);
+export function unionById<T extends { id: string }>(local: T[] = [], remote: T[] = []): T[] {
+  const map = new Map<string, T>();
+  for (const item of remote) map.set(item.id, item);
+  for (const item of local) map.set(item.id, item);
   return [...map.values()];
+}
+
+export function unionLessons(local: Lesson[] = [], remote: Lesson[] = []): Lesson[] {
+  return unionById(local, remote);
+}
+
+export function unionCapabilities(local: Capability[] = [], remote: Capability[] = []): Capability[] {
+  return unionById(local, remote);
+}
+
+/** אם לכלי אין אף יכולת — מוסיפים את טיוטות הזרע שלו, בלי לדרוס מה שכבר יש. */
+export function fillMissingCaps(existing: Capability[], drafts: Capability[]): Capability[] {
+  const haveId = new Set(existing.map((c) => c.id));
+  const toolsWith = new Set(existing.map((c) => c.toolId));
+  return [...existing, ...drafts.filter((d) => !haveId.has(d.id) && !toolsWith.has(d.toolId))];
 }
 
 /** מוסיפים טיוטה רק ליכולת שעדיין אין לה שיעור, בלי לדרוס קיים. */
@@ -98,7 +113,13 @@ export function fillMissingLessons(existing: Lesson[], drafts: Lesson[]): Lesson
 
 export function normalizeContent<T extends Pick<AppData, "capabilities" | "lessons">>(data: T): T {
   const cleaned = dropUnwantedContent(data);
-  return { ...cleaned, lessons: fillMissingLessons(cleaned.lessons, createSeed().lessons) };
+  const seed = createSeed();
+  const capabilities = fillMissingCaps(cleaned.capabilities, seed.capabilities);
+  return {
+    ...cleaned,
+    capabilities,
+    lessons: fillMissingLessons(cleaned.lessons, seed.lessons),
+  };
 }
 
 function mergeSeed(saved: AppData | null): AppData {
@@ -111,7 +132,7 @@ function mergeSeed(saved: AppData | null): AppData {
     teachers: saved.teachers?.length ? saved.teachers : seed.teachers,
     periods: saved.periods?.length ? saved.periods : seed.periods,
     tools: saved.tools?.length ? saved.tools : seed.tools,
-    capabilities: saved.capabilities?.length ? saved.capabilities : seed.capabilities,
+    capabilities: fillMissingCaps(saved.capabilities ?? [], seed.capabilities),
     lessons: fillMissingLessons(saved.lessons ?? [], seed.lessons),
     responses: saved.responses ?? [],
     reactions: saved.reactions ?? [],

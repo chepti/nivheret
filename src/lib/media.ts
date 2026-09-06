@@ -47,12 +47,46 @@ export async function prepareLessonImage(file: File): Promise<string> {
 }
 
 export async function uploadLessonImage(lessonId: string, dataUrl: string): Promise<string> {
+  if (!dataUrl.startsWith("data:image")) return dataUrl;
   const fb = getFirebase();
   if (!fb) return dataUrl;
   const blob = dataUrlToBlob(dataUrl);
   const ext = blob.type.includes("png") ? "png" : "jpg";
-  const path = `lessons/${lessonId}/${Date.now()}.${ext}`;
-  const fileRef = ref(fb.storage, path);
+  const fileRef = ref(fb.storage, `lessons/${lessonId}/${Date.now()}.${ext}`);
   await uploadBytes(fileRef, blob, { contentType: blob.type });
   return getDownloadURL(fileRef);
+}
+
+export async function uploadCmsImage(folder: string, id: string, dataUrl: string): Promise<string> {
+  if (!dataUrl.startsWith("data:image")) return dataUrl;
+  const fb = getFirebase();
+  if (!fb) return dataUrl;
+  const blob = dataUrlToBlob(dataUrl);
+  const ext = blob.type.includes("png") ? "png" : "jpg";
+  const fileRef = ref(fb.storage, `cms/${folder}/${id}.${ext}`);
+  await uploadBytes(fileRef, blob, { contentType: blob.type });
+  return getDownloadURL(fileRef);
+}
+
+export async function materializeContentImages<T extends {
+  tools?: { id: string; image?: string }[];
+  capabilities?: { id: string; image?: string }[];
+  badges?: { id: string; image?: string }[];
+}>(data: T): Promise<T> {
+  const tools = await Promise.all(
+    (data.tools ?? []).map(async (t) =>
+      t.image?.startsWith("data:image") ? { ...t, image: await uploadCmsImage("tools", t.id, t.image) } : t,
+    ),
+  );
+  const capabilities = await Promise.all(
+    (data.capabilities ?? []).map(async (c) =>
+      c.image?.startsWith("data:image") ? { ...c, image: await uploadCmsImage("capabilities", c.id, c.image) } : c,
+    ),
+  );
+  const badges = await Promise.all(
+    (data.badges ?? []).map(async (b) =>
+      b.image?.startsWith("data:image") ? { ...b, image: await uploadCmsImage("badges", b.id, b.image) } : b,
+    ),
+  );
+  return { ...data, tools, capabilities, badges };
 }
