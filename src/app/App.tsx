@@ -14,7 +14,7 @@ import { Cms } from "../screens/Cms";
 function Pages() {
   const route = useRoute();
   const { session } = useStore();
-  const wide = route.name === "admin";
+  const wide = route.name === "admin" || route.name === "cms";
 
   useEffect(() => {
     if (!session && route.name !== "welcome" && route.name !== "who") {

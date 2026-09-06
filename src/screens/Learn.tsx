@@ -102,7 +102,7 @@ export function Learn({ route }: { route: Route }) {
   return (
     <GoogleGate>
       <h1>איזור הלמידה</h1>
-      <p>איזורים עם נקודה ירוקה כבר מלאים בחומר. השאר יתמלאו במהלך השנה.</p>
+      <p>כלים עם שיעורים מוכנים נפתחים כאן. השאר יתמלאו במהלך השנה.</p>
       {data.tools.map((tool) => {
         const caps = data.capabilities.filter((c) => c.toolId === tool.id);
         const lessons = data.lessons.filter((l) => caps.some((c) => c.id === l.capabilityId));
@@ -114,7 +114,6 @@ export function Learn({ route }: { route: Route }) {
                 <h2>{tool.name}</h2>
                 <p className="small" style={{ margin: 0 }}>{lessons.length ? `${lessons.length} שיעורים מוכנים` : "עדיין אין תוכן — מוכן ב־CMS"}</p>
               </div>
-              {lessons.length > 0 && <span className="content-dot" />}
             </div>
             {lessons.map((l) => {
               const r = responseOf(l.capabilityId);

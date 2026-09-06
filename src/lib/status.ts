@@ -25,7 +25,7 @@ export const STATUS_META: Record<
   want: { label: "רוצה ללמוד", color: "#e8a317", soft: "#fff3d1" },
   mastered: { label: "שולטת", color: "#2bb39a", soft: "#d9f5ef" },
   product: { label: "יש תוצר", color: "#7b61ff", soft: "#ebe6ff" },
-  teach: { label: "מלמדת", color: "#ef6b7b", soft: "#ffe4e8" },
+  teach: { label: "מלמדת", color: "#5b7cfa", soft: "#e8eeff" },
 };
 
 export function emptyResponse(teacherId: string, capabilityId: string): CapabilityResponse {

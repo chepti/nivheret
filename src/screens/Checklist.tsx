@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bookmark, GraduationCap, Package, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { navigate } from "../app/router";
 import { useStore } from "../app/store";
 import { ClayIcon } from "../components/ClayIcons";
@@ -56,7 +56,6 @@ export function Checklist() {
             </div>
             {periodTools.map((tool) => {
               const caps = data.capabilities.filter((c) => c.toolId === tool.id).sort((a, b) => a.order - b.order);
-              const hasContent = caps.some((c) => data.lessons.some((l) => l.capabilityId === c.id));
               return (
                 <article key={tool.id} className="clay" style={{ padding: 16, marginBottom: 14 }}>
                   <div className="row" style={{ marginBottom: 10 }}>
@@ -65,7 +64,6 @@ export function Checklist() {
                       <h2>{tool.name}</h2>
                       <p className="small" style={{ margin: 0 }}>{tool.subtitle}</p>
                     </div>
-                    {hasContent && <span className="content-dot" title="יש תוכן ללמידה" />}
                   </div>
                   {caps.length === 0 ? (
                     <p className="small">היכולות יתווספו כאן מה־CMS כשיתמלא החודש.</p>
@@ -81,14 +79,10 @@ export function Checklist() {
                             style={{ width: "100%", justifyContent: "space-between" }}
                             onClick={() => setOpenId(open ? null : cap.id)}
                           >
-                            <span className="row">
-                              <span className="status-dot" style={{ background: STATUS_META[st].color }} />
-                              <span>
-                                <strong>{cap.title}</strong>
-                                <div className="small muted">{cap.description}</div>
-                              </span>
+                            <span>
+                              <strong>{cap.title}</strong>
+                              <div className="small muted">{cap.description}</div>
                             </span>
-                            {data.lessons.some((l) => l.capabilityId === cap.id) && <span className="content-dot" />}
                           </button>
                           {open && (
                             <div style={{ marginTop: 10 }} className="dopamine">
@@ -162,12 +156,6 @@ export function Checklist() {
           <Sparkles size={16} /> <span className="small">המספרים מתעדכנים עם כל סימון.</span>
         </div>
       </section>
-
-      <div className="row" style={{ marginTop: 16 }}>
-        <span className="small muted"><Bookmark size={14} /> שמירה אוטומטית</span>
-        <span className="small muted"><Package size={14} /> תוצר</span>
-        <span className="small muted"><GraduationCap size={14} /> למידה</span>
-      </div>
     </div>
   );
 }
