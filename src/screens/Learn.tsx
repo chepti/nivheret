@@ -4,6 +4,7 @@ import { navigate, type Route } from "../app/router";
 import { useStore } from "../app/store";
 import { ClayIcon } from "../components/ClayIcons";
 import { GoogleGate } from "../components/GoogleGate";
+import { ImagePaste } from "../components/ImagePaste";
 
 export function Learn({ route }: { route: Route }) {
   const { data, responseOf, upsertResponse, upsertReaction, session } = useStore();
@@ -76,24 +77,23 @@ export function Learn({ route }: { route: Route }) {
           <textarea
             className="field"
             style={{ marginTop: 12, minHeight: 80 }}
-            placeholder="הנה התוצר שלי…"
+            placeholder="הנה התוצר שלי — אפשר גם לכתוב כאן"
             value={reaction?.productNote ?? ""}
             onChange={(e) => upsertReaction({ capabilityId: lesson.capabilityId, productNote: e.target.value })}
-          />
-          <input
-            className="field"
-            style={{ marginTop: 8 }}
-            type="file"
-            accept="image/*"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
+            onPaste={(e) => {
+              const item = [...(e.clipboardData?.items ?? [])].find((i) => i.type.startsWith("image/"));
+              const file = item?.getAsFile();
               if (!file) return;
+              e.preventDefault();
               const reader = new FileReader();
               reader.onload = () => upsertReaction({ capabilityId: lesson.capabilityId, productImage: String(reader.result) });
               reader.readAsDataURL(file);
             }}
           />
-          {reaction?.productImage && <img alt="תוצר" src={reaction.productImage} style={{ width: "100%", borderRadius: 20, marginTop: 10 }} />}
+          <ImagePaste
+            value={reaction?.productImage}
+            onChange={(dataUrl) => upsertReaction({ capabilityId: lesson.capabilityId, productImage: dataUrl })}
+          />
         </div>
       </GoogleGate>
     );

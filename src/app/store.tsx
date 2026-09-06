@@ -38,6 +38,7 @@ type Store = {
   isAdmin: boolean;
   isAuthedBeyondForm: boolean;
   syncReady: boolean;
+  cloudSave: "idle" | "saving" | "saved" | "error";
   setData: (updater: AppData | ((prev: AppData) => AppData)) => void;
   enterForm: (institutionId: string, teacher: Teacher) => void;
   linkGoogle: () => Promise<string | null>;
@@ -55,7 +56,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [data, setDataState] = useState<AppData>(() => loadData());
   const [session, setSessionState] = useState<Session | null>(() => loadSession());
   const [syncReady, setSyncReady] = useState(!firebaseEnabled());
+  const [cloudSave, setCloudSave] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const skipRemoteContent = useRef(false);
+  const hydrated = useRef(!firebaseEnabled());
+  const pending = useRef<AppData | null>(null);
+  const saveTimer = useRef<number>(0);
 
   useEffect(() => {
     saveData(data);
@@ -79,6 +84,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             reactions: remote.reactions ?? prev.reactions,
           }));
         }
+        hydrated.current = true;
         stop = watchShared((part) => {
           if (skipRemoteContent.current) return;
           setDataState((prev) => ({ ...prev, ...part }));
@@ -86,6 +92,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         console.error("Firebase sync", err);
       } finally {
+        hydrated.current = true;
         setSyncReady(true);
       }
     })();
@@ -95,13 +102,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setData: Store["setData"] = (updater) => {
     setDataState((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater;
-      if (firebaseEnabled()) {
-        skipRemoteContent.current = true;
-        void pushContent(next).finally(() => {
-          window.setTimeout(() => {
-            skipRemoteContent.current = false;
-          }, 400);
-        });
+      pending.current = next;
+      if (firebaseEnabled() && hydrated.current) {
+        setCloudSave("saving");
+        window.clearTimeout(saveTimer.current);
+        saveTimer.current = window.setTimeout(() => {
+          const payload = pending.current;
+          if (!payload) return;
+          skipRemoteContent.current = true;
+          void pushContent(payload)
+            .then(() => setCloudSave("saved"))
+            .catch(() => setCloudSave("error"))
+            .finally(() => {
+              window.setTimeout(() => {
+                skipRemoteContent.current = false;
+              }, 900);
+            });
+        }, 700);
         const changed = next.teachers.filter((t) => {
           const old = prev.teachers.find((x) => x.id === t.id);
           return !old || JSON.stringify(old) !== JSON.stringify(t);
@@ -167,7 +184,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const teacherId = session.teacherId;
     setDataState((prev) => {
       const i = prev.responses.findIndex(
-        (r) => r.teacherId === teacherId && r.capabilityId === patch.capabilityId,
+        (r) => r.teacherId.toLowerCase() === teacherId.toLowerCase() && r.capabilityId === patch.capabilityId,
       );
       const base = i >= 0 ? prev.responses[i] : emptyResponse(teacherId, patch.capabilityId);
       const next = { ...base, ...patch, teacherId, updatedAt: new Date().toISOString() };
@@ -180,10 +197,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const responseOf: Store["responseOf"] = (capabilityId, teacherId) => {
-    const id = teacherId ?? session?.teacherId ?? "";
+    const id = (teacherId ?? session?.teacherId ?? session?.email ?? "").toLowerCase();
     return (
-      data.responses.find((r) => r.teacherId === id && r.capabilityId === capabilityId) ??
-      emptyResponse(id, capabilityId)
+      data.responses.find(
+        (r) => r.teacherId.toLowerCase() === id && r.capabilityId === capabilityId,
+      ) ?? emptyResponse(id, capabilityId)
     );
   };
 
@@ -236,6 +254,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     isAdmin,
     isAuthedBeyondForm,
     syncReady,
+    cloudSave,
     setData,
     enterForm,
     linkGoogle,
