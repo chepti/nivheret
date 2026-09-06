@@ -103,9 +103,12 @@ export function Learn({ route }: { route: Route }) {
     <GoogleGate>
       <h1>איזור הלמידה</h1>
       <p>כלים עם שיעורים מוכנים נפתחים כאן. השאר יתמלאו במהלך השנה.</p>
-      {data.tools.map((tool) => {
-        const caps = data.capabilities.filter((c) => c.toolId === tool.id);
-        const lessons = data.lessons.filter((l) => caps.some((c) => c.id === l.capabilityId));
+      {data.tools.slice().sort((a, b) => a.order - b.order).map((tool) => {
+        const caps = data.capabilities.filter((c) => c.toolId === tool.id).slice().sort((a, b) => a.order - b.order);
+        const capOrder = new Map(caps.map((c, i) => [c.id, i]));
+        const lessons = data.lessons
+          .filter((l) => capOrder.has(l.capabilityId))
+          .sort((a, b) => (capOrder.get(a.capabilityId) ?? 0) - (capOrder.get(b.capabilityId) ?? 0));
         return (
           <article key={tool.id} className="clay" style={{ padding: 16, marginBottom: 12 }}>
             <div className="row">

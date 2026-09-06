@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { Award, BookOpen, CalendarDays, ChevronLeft, Plus, Settings, Trash2, Users } from "lucide-react";
+import { Award, BookOpen, CalendarDays, ChevronLeft, GripVertical, Plus, Settings, Trash2, Users } from "lucide-react";
 import { useStore } from "../app/store";
 import { GoogleGate } from "../components/GoogleGate";
 import { ImagePaste } from "../components/ImagePaste";
@@ -30,6 +30,8 @@ export function Cms() {
   const [node, setNode] = useState<Node>({ kind: "home" });
   const [q, setQ] = useState("");
   const [openPeriod, setOpenPeriod] = useState<string | null>("elul-tishrei");
+  const [dragCap, setDragCap] = useState<string | null>(null);
+  const [overCap, setOverCap] = useState<string | null>(null);
 
   const tool = node.kind === "tool" ? data.tools.find((t) => t.id === node.id) : undefined;
   const period = node.kind === "period" ? data.periods.find((p) => p.id === node.id) : undefined;
@@ -193,23 +195,65 @@ export function Cms() {
                 </div>
               )}
 
-              {node.tab === "caps" && data.capabilities.filter((c) => c.toolId === tool.id).map((c) => (
-                <div key={c.id} className="clay cms-editor">
-                  <Field label="שם היכולת">
-                    <input className="field" value={c.title} onChange={(e) => patchCap(c.id, { title: e.target.value })} />
-                  </Field>
-                  <Field label="מה בודקים כאן">
-                    <textarea className="field" value={c.description} onChange={(e) => patchCap(c.id, { description: e.target.value })} />
-                  </Field>
-                  <button className="small" onClick={() => setData((d) => ({ ...d, capabilities: d.capabilities.filter((x) => x.id !== c.id) }))}>מחיקת יכולת</button>
-                </div>
-              ))}
+              {node.tab === "caps" && (
+                <>
+                  <p className="small">גררי את הידית כדי לשנות את סדר היכולות בצ׳קליסט.</p>
+                  {data.capabilities
+                    .filter((c) => c.toolId === tool.id)
+                    .slice()
+                    .sort((a, b) => a.order - b.order)
+                    .map((c, i) => (
+                      <div
+                        key={c.id}
+                        className={`clay cms-editor ${dragCap === c.id ? "dragging" : ""} ${overCap === c.id && dragCap !== c.id ? "drag-over" : ""}`}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setOverCap(c.id);
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const from = e.dataTransfer.getData("text/plain") || dragCap;
+                          if (from) moveCap(tool.id, from, c.id);
+                          setDragCap(null);
+                          setOverCap(null);
+                        }}
+                        onDragEnd={() => {
+                          setDragCap(null);
+                          setOverCap(null);
+                        }}
+                      >
+                        <div className="cms-cap-head">
+                          <span
+                            className="drag-handle"
+                            title="גרירה לשינוי סדר"
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.effectAllowed = "move";
+                              e.dataTransfer.setData("text/plain", c.id);
+                              setDragCap(c.id);
+                            }}
+                          >
+                            <GripVertical size={18} />
+                          </span>
+                          <span className="small muted">יכולת {i + 1}</span>
+                        </div>
+                        <Field label="שם היכולת">
+                          <input className="field" value={c.title} onChange={(e) => patchCap(c.id, { title: e.target.value })} />
+                        </Field>
+                        <Field label="מה בודקים כאן">
+                          <textarea className="field" value={c.description} onChange={(e) => patchCap(c.id, { description: e.target.value })} />
+                        </Field>
+                        <button className="small" onClick={() => setData((d) => ({ ...d, capabilities: d.capabilities.filter((x) => x.id !== c.id) }))}>מחיקת יכולת</button>
+                      </div>
+                    ))}
+                </>
+              )}
 
               {node.tab === "lessons" && data.lessons.filter((l) => data.capabilities.some((c) => c.id === l.capabilityId && c.toolId === tool.id)).map((l) => (
                 <div key={l.id} className="clay cms-editor">
                   <Field label="שייך ליכולת">
                     <select className="field" value={l.capabilityId} onChange={(e) => patchLesson(l.id, { capabilityId: e.target.value })}>
-                      {data.capabilities.filter((c) => c.toolId === tool.id).map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+                      {data.capabilities.filter((c) => c.toolId === tool.id).slice().sort((a, b) => a.order - b.order).map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
                     </select>
                   </Field>
                   <Field label="כותרת השיעור">
@@ -356,6 +400,23 @@ export function Cms() {
   function patchCap(id: string, patch: Partial<Capability>) {
     setData((d) => ({ ...d, capabilities: d.capabilities.map((c) => (c.id === id ? { ...c, ...patch } : c)) }));
   }
+  function moveCap(toolId: string, fromId: string, toId: string) {
+    if (fromId === toId) return;
+    setData((d) => {
+      const group = d.capabilities.filter((c) => c.toolId === toolId).slice().sort((a, b) => a.order - b.order);
+      const from = group.findIndex((c) => c.id === fromId);
+      const to = group.findIndex((c) => c.id === toId);
+      if (from < 0 || to < 0) return d;
+      const next = [...group];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      const orderOf = new Map(next.map((c, i) => [c.id, i + 1]));
+      return {
+        ...d,
+        capabilities: d.capabilities.map((c) => (orderOf.has(c.id) ? { ...c, order: orderOf.get(c.id)! } : c)),
+      };
+    });
+  }
   function patchLesson(id: string, patch: Partial<Lesson>) {
     setData((d) => ({ ...d, lessons: d.lessons.map((l) => (l.id === id ? { ...l, ...patch } : l)) }));
   }
@@ -380,10 +441,13 @@ export function Cms() {
     setNode({ kind: "tool", id, tab: "info" });
   }
   function addCap(toolId: string) {
-    setData((d) => ({
-      ...d,
-      capabilities: [...d.capabilities, { id: newId("cap"), toolId, title: "יכולת חדשה", description: "", order: d.capabilities.length + 1 }],
-    }));
+    setData((d) => {
+      const max = d.capabilities.filter((c) => c.toolId === toolId).reduce((n, c) => Math.max(n, c.order), 0);
+      return {
+        ...d,
+        capabilities: [...d.capabilities, { id: newId("cap"), toolId, title: "יכולת חדשה", description: "", order: max + 1 }],
+      };
+    });
   }
   function addLesson(toolId: string) {
     const cap = data.capabilities.find((c) => c.toolId === toolId);

@@ -247,6 +247,25 @@ p { margin: 0 0 10px; color: var(--muted); line-height: 1.55; }
   display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
 }
 .cms-editor { padding: 16px; margin: 10px 0; }
+.cms-editor.dragging { opacity: 0.45; }
+.cms-editor.drag-over { outline: 2px dashed #f5c518; outline-offset: 2px; }
+.cms-cap-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.drag-handle {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  color: var(--muted);
+  cursor: grab;
+  background: #fffaf0;
+}
+.drag-handle:active { cursor: grabbing; }
 .teacher-list { overflow-x: auto; padding: 4px 0; }
 .teacher-row {
   display: grid;
