@@ -22,6 +22,8 @@ npm run dev
 
 ## Firebase
 
+כתובת חיה: https://nivheret.web.app/
+
 פרויקט: `nivheret-3d7ad`. קובץ `.env` מקומי (לא בגיט) עם מפתחות `VITE_FIREBASE_*`.
 
 הסימונים, רשימת המורות וה־CMS מסונכרנים ל־Firestore. בלי `.env` האפליקציה נופלת חזרה ל־`localStorage`.
