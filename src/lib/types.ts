@@ -99,11 +99,23 @@ export type MeetingRsvp = {
   attended: boolean;
 };
 
+export type BadgeMetric =
+  | "wantToLearn"
+  | "mastered"
+  | "hasProduct"
+  | "readyToTeach"
+  | "savedForLater"
+  | "completedLearning"
+  | "anyMarked";
+
 export type BadgeDef = {
   id: string;
   title: string;
   description: string;
   icon: string;
+  image?: string;
+  metric: BadgeMetric;
+  target: number;
 };
 
 export type Settings = {

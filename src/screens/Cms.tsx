@@ -1,9 +1,11 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { BookOpen, CalendarDays, ChevronLeft, Plus, Settings, Users } from "lucide-react";
+import { Award, BookOpen, CalendarDays, ChevronLeft, Plus, Settings, Users } from "lucide-react";
 import { useStore } from "../app/store";
 import { GoogleGate } from "../components/GoogleGate";
+import { ImagePaste } from "../components/ImagePaste";
+import { METRIC_OPTIONS, normalizeBadge } from "../lib/badges";
 import { newId } from "../lib/storage";
-import type { Capability, Lesson, Meeting, Teacher, Tool } from "../lib/types";
+import type { BadgeDef, BadgeMetric, Capability, Lesson, Meeting, Teacher, Tool } from "../lib/types";
 
 type Node =
   | { kind: "home" }
@@ -11,6 +13,7 @@ type Node =
   | { kind: "tool"; id: string; tab: "info" | "caps" | "lessons" }
   | { kind: "meetings" }
   | { kind: "teachers" }
+  | { kind: "badges" }
   | { kind: "settings" };
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -86,6 +89,9 @@ export function Cms() {
           <button className={`tree-item ${node.kind === "teachers" ? "on" : ""}`} onClick={() => setNode({ kind: "teachers" })}>
             <Users size={16} /> מורות
           </button>
+          <button className={`tree-item ${node.kind === "badges" ? "on" : ""}`} onClick={() => setNode({ kind: "badges" })}>
+            <Award size={16} /> באדג׳ים
+          </button>
           <button className={`tree-item ${node.kind === "settings" ? "on" : ""}`} onClick={() => setNode({ kind: "settings" })}>
             <Settings size={16} /> הגדרות
           </button>
@@ -106,6 +112,7 @@ export function Cms() {
               {node.kind === "tool" && node.tab === "lessons" && <button className="pill btn-yellow" onClick={() => addLesson(node.id)}><Plus size={16} /> שיעור</button>}
               {node.kind === "meetings" && <button className="pill btn-yellow" onClick={addMeet}><Plus size={16} /> מפגש</button>}
               {node.kind === "teachers" && <button className="pill btn-yellow" onClick={addTeacher}><Plus size={16} /> מורה</button>}
+              {node.kind === "badges" && <button className="pill btn-yellow" onClick={addBadge}><Plus size={16} /> באדג׳</button>}
             </div>
           </div>
 
@@ -254,6 +261,41 @@ export function Cms() {
             </div>
           )}
 
+          {node.kind === "badges" && data.badges.map((raw) => {
+            const b = normalizeBadge(raw);
+            return (
+              <div key={b.id} className="clay cms-editor">
+                <Field label="שם הבאדג׳">
+                  <input className="field" value={b.title} onChange={(e) => patchBadge(b.id, { title: e.target.value })} />
+                </Field>
+                <Field label="מה סופרים">
+                  <select className="field" value={b.metric} onChange={(e) => {
+                    const metric = e.target.value as BadgeMetric;
+                    const tpl = METRIC_OPTIONS.find((m) => m.id === metric)?.template ?? b.description;
+                    patchBadge(b.id, { metric, description: tpl });
+                  }}>
+                    {METRIC_OPTIONS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+                  </select>
+                </Field>
+                <Field label="יעד (המספר שממנו מקבלים את הבאדג׳)">
+                  <input className="field" type="number" min={1} value={b.target} onChange={(e) => patchBadge(b.id, { target: Math.max(1, Number(e.target.value) || 1) })} />
+                </Field>
+                <Field label="משפט בפרופיל — אפשר {current} ו־{target}">
+                  <input className="field" value={b.description} onChange={(e) => patchBadge(b.id, { description: e.target.value })} />
+                </Field>
+                <Field label="תמונת דמות">
+                  <ImagePaste
+                    value={b.image}
+                    maxEdge={280}
+                    hint="הדביקי או העלי תמונת דמות לבאדג׳"
+                    onChange={(image) => patchBadge(b.id, { image })}
+                  />
+                </Field>
+                <button className="small" onClick={() => setData((d) => ({ ...d, badges: d.badges.filter((x) => x.id !== b.id) }))}>מחיקת באדג׳</button>
+              </div>
+            );
+          })}
+
           {node.kind === "settings" && (
             <div className="clay cms-editor">
               <Field label="מיילי אדמין (שורה לכל מייל)">
@@ -275,6 +317,7 @@ export function Cms() {
     if (n.kind === "tool") return data.tools.find((t) => t.id === n.id)?.name ?? "";
     if (n.kind === "meetings") return "מפגשי צוות";
     if (n.kind === "teachers") return "ספר מורות";
+    if (n.kind === "badges") return "באדג׳ים";
     return "הגדרות";
   }
   function patchTool(id: string, patch: Partial<Tool>) {
@@ -330,6 +373,22 @@ export function Cms() {
     setData((d) => ({
       ...d,
       meetings: [...d.meetings, { id: newId("meet"), title: "מפגש חדש", topic: "צוות", datetime: new Date().toISOString().slice(0, 16), location: "", description: "" }],
+    }));
+  }
+  function patchBadge(id: string, patch: Partial<BadgeDef>) {
+    setData((d) => ({ ...d, badges: d.badges.map((b) => (b.id === id ? normalizeBadge({ ...b, ...patch }) : b)) }));
+  }
+  function addBadge() {
+    setData((d) => ({
+      ...d,
+      badges: [...d.badges, {
+        id: newId("badge"),
+        title: "באדג׳ חדש",
+        description: "סימנת {current} מתוך {target} תחומים",
+        icon: "award",
+        metric: "wantToLearn",
+        target: 5,
+      }],
     }));
   }
   function addTeacher() {

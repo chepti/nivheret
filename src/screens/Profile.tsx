@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
-import { Award, Bookmark, Sparkles } from "lucide-react";
+import { Bookmark, Sparkles } from "lucide-react";
 import { navigate } from "../app/router";
 import { useStore } from "../app/store";
 import { GoogleGate } from "../components/GoogleGate";
+import { teacherBadgeRows } from "../lib/badges";
 import { LEARN_HOW_LABEL } from "../lib/status";
 
 export function Profile() {
-  const { data, session, teacher, myBadges, responseOf } = useStore();
+  const { data, session, teacher, responseOf } = useStore();
   const [showAllLearn, setShowAllLearn] = useState(false);
   const [showAllSaved, setShowAllSaved] = useState(false);
   if (!session) return null;
@@ -15,6 +16,11 @@ export function Profile() {
     const ids = new Set([session.teacherId.toLowerCase(), session.email.toLowerCase()]);
     return data.responses.filter((r) => ids.has(r.teacherId.toLowerCase()));
   }, [data.responses, session]);
+
+  const badgeRows = useMemo(
+    () => teacherBadgeRows({ ...data, responses: mine }, session.teacherId),
+    [data, mine, session.teacherId],
+  );
 
   const learn = data.capabilities.filter((c) => mine.some((r) => r.capabilityId === c.id && r.wantToLearn));
   const saved = data.capabilities.filter((c) => mine.some((r) => r.capabilityId === c.id && r.savedForLater));
@@ -28,14 +34,24 @@ export function Profile() {
 
       <section className="clay" style={{ padding: 18, marginTop: 12 }}>
         <h2><Sparkles size={18} /> באדג׳ים</h2>
-        <div className="row">
-          {data.badges.filter((b) => myBadges.includes(b.id)).map((b) => (
-            <span key={b.id} className="badge-chip" title={b.description}>
-              <Award size={14} /> {b.title}
-            </span>
+        <div className="badge-grid">
+          {badgeRows.map(({ badge, current, target, earned, text }) => (
+            <article key={badge.id} className={`badge-card ${earned ? "earned" : ""}`}>
+              {badge.image ? (
+                <img src={badge.image} alt="" className="badge-face" />
+              ) : (
+                <div className="badge-face placeholder">{badge.title[0]}</div>
+              )}
+              <div>
+                <strong>{badge.title}</strong>
+                <div className="small">{text}</div>
+                <div className="badge-bar" aria-hidden>
+                  <span style={{ width: `${Math.min(100, Math.round((current / target) * 100))}%` }} />
+                </div>
+              </div>
+            </article>
           ))}
         </div>
-        {myBadges.length === 0 && <p>הבאדג׳ים יופיעו אחרי הסימונים הראשונים בטופס.</p>}
       </section>
 
       <section className="clay" style={{ padding: 18, marginTop: 12 }}>

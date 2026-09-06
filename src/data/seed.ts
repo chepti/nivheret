@@ -169,12 +169,12 @@ const meetings: Meeting[] = [
 ];
 
 const badges: BadgeDef[] = [
-  { id: "aspire", title: "שאיפות גבוהות", description: "סימנת לפחות 8 יכולות שאת רוצה ללמוד.", icon: "sparkles" },
-  { id: "expert", title: "מומחית", description: "את כבר שולטת ב־10 יכולות לפחות.", icon: "award" },
-  { id: "doer", title: "מיישמת", description: "שיתפת יותר מ־5 תוצרים.", icon: "package" },
-  { id: "mentor", title: "מלמדת", description: "סימנת שאת מוכנה ללמד עמיתה.", icon: "heart-handshake" },
-  { id: "first", title: "ראשונה בשער", description: "מילאת את הטופס והתחלת את השנה.", icon: "flag" },
-  { id: "curious", title: "סקרנית", description: "שמרת פריטים ללמידה בהמשך.", icon: "bookmark" },
+  { id: "aspire", title: "שאיפות גבוהות", description: "סימנת {current} מתוך {target} תחומים", icon: "sparkles", metric: "wantToLearn", target: 10 },
+  { id: "expert", title: "מומחית", description: "שולטת ב־{current} מתוך {target} יכולות", icon: "award", metric: "mastered", target: 10 },
+  { id: "doer", title: "מיישמת", description: "העלית {current} מתוך {target} תוצרים", icon: "package", metric: "hasProduct", target: 6 },
+  { id: "mentor", title: "מלמדת", description: "מוכנה ללמד {current} מתוך {target} יכולות", icon: "heart-handshake", metric: "readyToTeach", target: 1 },
+  { id: "first", title: "ראשונה בשער", description: "מילאת את הטופס — {current} מתוך {target}", icon: "flag", metric: "anyMarked", target: 1 },
+  { id: "curious", title: "סקרנית", description: "שמרת {current} מתוך {target} פריטים", icon: "bookmark", metric: "savedForLater", target: 3 },
 ];
 
 const settings: Settings = {

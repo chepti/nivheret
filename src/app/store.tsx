@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { earnedBadgeIds } from "../lib/badges";
+import { earnedBadgeIds, normalizeBadge } from "../lib/badges";
 import { firebaseEnabled, signInWithGoogle, signOutGoogle } from "../lib/firebase";
 import { emptyResponse } from "../lib/status";
 import { loadData, loadSession, saveData, saveSession } from "../lib/storage";
@@ -79,6 +79,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             ...prev,
             ...remote,
             teachers: remote.teachers?.length ? remote.teachers : prev.teachers,
+            badges: (remote.badges ?? prev.badges).map(normalizeBadge),
             responses: remote.responses ?? prev.responses,
             rsvps: remote.rsvps ?? prev.rsvps,
             reactions: remote.reactions ?? prev.reactions,
