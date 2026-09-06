@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { useStore } from "../app/store";
 import { GoogleGate } from "../components/GoogleGate";
+import { PairDoneCheck } from "../components/PairDoneCheck";
 import { HeatMap } from "../viz/HeatMap";
+import { TeamRings } from "../viz/TeamRings";
 import { ToolOrbit } from "../viz/ToolOrbit";
 import {
   capabilityInsights,
@@ -14,15 +16,19 @@ import {
 import { formatHebDate, LEARN_HOW_LABEL } from "../lib/status";
 import type { LearnHow } from "../lib/types";
 
-type Tab = "teach" | "pairs" | "meetings" | "map";
+type Tab = "map" | "teach" | "pairs" | "meetings";
 
 export function AdminDash() {
   const { data, isAdmin } = useStore();
-  const [tab, setTab] = useState<Tab>("teach");
+  const [tab, setTab] = useState<Tab>("map");
   const [flash, setFlash] = useState("");
+  const [openCap, setOpenCap] = useState<string | null>(null);
+  const [openMeet, setOpenMeet] = useState<string | null>(null);
 
   const insights = useMemo(() => capabilityInsights(data), [data]);
   const pairing = useMemo(() => suggestedPairs(data), [data]);
+  const openPairs = pairing.pairs.filter((p) => !p.done);
+  const donePairs = pairing.pairs.filter((p) => p.done);
   const active = useMemo(() => {
     const ids = new Set(
       data.responses.filter((r) => r.wantToLearn || r.mastered || r.hasProduct || r.readyToTeach).map((r) => r.teacherId.toLowerCase()),
@@ -48,116 +54,157 @@ export function AdminDash() {
     <GoogleGate>
       {flash && <div className="toast-save">{flash}</div>}
       <h1>מידע להנהלה</h1>
-      <p>{active} מורות ענו בטופס מתוך {data.teachers.length}. כאן רואים שמות, העדפות למידה, צמדים ומפגשים.</p>
+      <p>{active} מורות ענו בטופס מתוך {data.teachers.length}.</p>
 
       <div className="cms-tabs" style={{ margin: "12px 0 16px" }}>
+        <button className={tab === "map" ? "on" : ""} onClick={() => setTab("map")}>דשבורד</button>
         <button className={tab === "teach" ? "on" : ""} onClick={() => setTab("teach")}>מה ללמד</button>
         <button className={tab === "pairs" ? "on" : ""} onClick={() => setTab("pairs")}>שידוך צמדים</button>
         <button className={tab === "meetings" ? "on" : ""} onClick={() => setTab("meetings")}>מפגשים</button>
-        <button className={tab === "map" ? "on" : ""} onClick={() => setTab("map")}>מפה</button>
       </div>
 
-      {tab === "teach" && (
+      {tab === "map" && (
         <section>
+          {data.settings.praiseNote && (
+            <div className="clay" style={{ padding: 16, marginBottom: 14 }}>
+              <p style={{ margin: 0 }}>{data.settings.praiseNote}</p>
+            </div>
+          )}
+          <div className="clay" style={{ padding: 16, marginBottom: 14 }}>
+            <h2>מפת חום</h2>
+            <HeatMap />
+          </div>
+          <h2>לפי מורה</h2>
+          <TeamRings />
+          <h2 style={{ marginTop: 18 }}>לפי כלי</h2>
+          <div className="grid-tools">
+            {data.tools.filter((t) => data.capabilities.some((c) => c.toolId === t.id)).map((tool) => (
+              <ToolOrbit key={tool.id} tool={tool} showNames />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {tab === "teach" && (
+        <section className="compact-stack">
           {!insights.length && <p>עוד אין סימונים מדויקים. ברגע שמורות ימלאו — יופיעו כאן שמות ואיך הן רוצות ללמוד.</p>}
-          {insights.map((row) => (
-            <article key={row.cap.id} className="clay" style={{ padding: 16, marginBottom: 12 }}>
-              <div className="small muted">{row.toolName}</div>
-              <h2>{row.cap.title}</h2>
-              <p style={{ color: "var(--ink)" }}>{row.suggest}</p>
-              <div className="row" style={{ marginBottom: 8 }}>
-                <span className="badge-chip">{row.want.length} רוצות ללמוד</span>
-                <span className="badge-chip">{row.teach.length} מלמדות</span>
-                <span className="badge-chip">{row.product.length} עם תוצר</span>
-              </div>
-              {(Object.keys(LEARN_HOW_LABEL) as LearnHow[]).some((k) => row.howCounts[k]) && (
-                <p className="small">
-                  איך ללמד:{" "}
-                  {(Object.keys(LEARN_HOW_LABEL) as LearnHow[])
-                    .filter((k) => row.howCounts[k])
-                    .map((k) => `${LEARN_HOW_LABEL[k]} — ${row.howCounts[k]}`)
-                    .join(" · ")}
-                </p>
-              )}
-              {!!row.want.length && (
-                <div className="name-list">
-                  <strong>רוצות ללמוד</strong>
-                  {row.want.map((w) => (
-                    <div key={w.id} className="name-row">
-                      <span>{w.name}</span>
-                      <span className="small muted">{w.how ? LEARN_HOW_LABEL[w.how] : "לא ציינה איך"}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {!!row.teach.length && (
-                <div className="name-list">
-                  <strong>מוכנות ללמד</strong>
-                  {row.teach.map((t) => <div key={t.id} className="name-row">{t.name}</div>)}
-                </div>
-              )}
-              {!!row.product.length && (
-                <div className="name-list">
-                  <strong>יש תוצר</strong>
-                  {row.product.map((p) => (
-                    <div key={p.id} className="name-row">
-                      <span>{p.name}</span>
-                      {p.url && <a className="small" href={p.url} target="_blank" rel="noreferrer" dir="ltr">{p.url}</a>}
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="row" style={{ marginTop: 10 }}>
-                <button
-                  className="pill btn-primary small"
-                  onClick={() => openMail(
-                    row.want.map((w) => teacherEmail(data, w.id)),
-                    `למידה: ${row.cap.title}`,
-                    `שלום,\n\nנראה שיש עניין ביכולת «${row.cap.title}».\n${row.suggest}\n\nנבחרת`,
-                  )}
-                >
-                  מייל לרוצות ללמוד
+          {insights.map((row) => {
+            const open = openCap === row.cap.id;
+            return (
+              <article key={row.cap.id} className="clay compact-card">
+                <button className="compact-head" onClick={() => setOpenCap(open ? null : row.cap.id)}>
+                  <span>
+                    <strong>{row.cap.title}</strong>
+                    <span className="small muted"> {row.toolName}</span>
+                  </span>
+                  <span className="small muted">
+                    {row.want.length} לומדות · {row.teach.length} מלמדות · {row.product.length} תוצרים
+                  </span>
                 </button>
-                <button
-                  className="pill btn-yellow small"
-                  onClick={() => void ping(row.want.map((w) => teacherEmail(data, w.id)).join(", "))}
-                >
-                  העתקת מיילים
-                </button>
-              </div>
-            </article>
-          ))}
+                <p className="small compact-hint">{row.suggest}</p>
+                {open && (
+                  <div className="compact-body">
+                    {(Object.keys(LEARN_HOW_LABEL) as LearnHow[]).some((k) => row.howCounts[k]) && (
+                      <p className="small">
+                        {(Object.keys(LEARN_HOW_LABEL) as LearnHow[])
+                          .filter((k) => row.howCounts[k])
+                          .map((k) => `${LEARN_HOW_LABEL[k]} — ${row.howCounts[k]}`)
+                          .join(" · ")}
+                      </p>
+                    )}
+                    {!!row.want.length && (
+                      <p className="small"><strong>לומדות: </strong>{row.want.map((w) => `${w.name}${w.how ? ` (${LEARN_HOW_LABEL[w.how]})` : ""}`).join(" · ")}</p>
+                    )}
+                    {!!row.teach.length && (
+                      <p className="small"><strong>מלמדות: </strong>{row.teach.map((t) => t.name).join(" · ")}</p>
+                    )}
+                    {!!row.product.length && (
+                      <p className="small">
+                        <strong>תוצרים: </strong>
+                        {row.product.map((p, i) => (
+                          <span key={p.id}>
+                            {i > 0 && " · "}
+                            {p.url ? <a href={p.url} target="_blank" rel="noreferrer">{p.name}</a> : p.name}
+                          </span>
+                        ))}
+                      </p>
+                    )}
+                    <div className="row" style={{ marginTop: 6 }}>
+                      <button
+                        className="pill btn-primary small"
+                        onClick={() => openMail(
+                          row.want.map((w) => teacherEmail(data, w.id)),
+                          `למידה: ${row.cap.title}`,
+                          `שלום,\n\nנראה שיש עניין ביכולת «${row.cap.title}».\n${row.suggest}\n\nנבחרת`,
+                        )}
+                      >
+                        מייל
+                      </button>
+                      <button
+                        className="pill btn-yellow small"
+                        onClick={() => void ping(row.want.map((w) => teacherEmail(data, w.id)).join(", "))}
+                      >
+                        העתקה
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </article>
+            );
+          })}
         </section>
       )}
 
       {tab === "pairs" && (
         <section>
-          <p>כל צמד: מורה שרוצה ללמוד + מורה שמוכנה ללמד באותה יכולת. אפשר לפתוח מייל לשתיכן.</p>
+          <p className="small">צמד = לומדת + מלמדת. גם המורות יכולות לסמן בצ׳קליסט ובפרופיל שזה קרה.</p>
           {!pairing.pairs.length && <p>אין עדיין גם «רוצה ללמוד» וגם «מלמדת» על אותה יכולת.</p>}
-          {pairing.pairs.map((p, i) => (
-            <article key={`${p.capabilityId}-${p.learnerId}-${i}`} className="clay" style={{ padding: 14, marginBottom: 10 }}>
-              <div className="small muted">{p.capabilityTitle}</div>
-              <h2 style={{ fontSize: "1.15rem" }}>{p.learnerName} ← {p.mentorName}</h2>
-              <p className="small">{p.mentorName} מלמדת · {p.learnerName} לומדת</p>
-              <div className="row">
-                <button
-                  className="pill btn-ink small"
-                  onClick={() => openMail(
-                    [teacherEmail(data, p.learnerId), teacherEmail(data, p.mentorId)],
-                    `צמד למידה: ${p.capabilityTitle}`,
-                    `שלום ${p.learnerName} ו${p.mentorName},\n\nחשבנו על צמד למידה משותפת ביכולת «${p.capabilityTitle}».\n${p.mentorName} — מוכנה ללמד.\n${p.learnerName} — רוצה ללמוד.\n\nתאמו ביניכן מועד קצר 1:1.\n\nנבחרת`,
-                  )}
-                >
-                  מייל לצמד
-                </button>
-              </div>
-            </article>
-          ))}
+          {!!openPairs.length && (
+            <div className="clay compact-card">
+              {openPairs.map((p) => (
+                <div key={p.id} className="pair-row">
+                  <span>
+                    <strong>{p.learnerName}</strong>
+                    <span className="muted"> ← </span>
+                    {p.mentorName}
+                  </span>
+                  <span className="small muted">{p.capabilityTitle}</span>
+                  <PairDoneCheck pair={p} />
+                  <button
+                    className="pill btn-ink small"
+                    onClick={() => openMail(
+                      [teacherEmail(data, p.learnerId), teacherEmail(data, p.mentorId)],
+                      `צמד למידה: ${p.capabilityTitle}`,
+                      `שלום ${p.learnerName} ו${p.mentorName},\n\nחשבנו על צמד למידה משותפת ביכולת «${p.capabilityTitle}».\n${p.mentorName} — מוכנה ללמד.\n${p.learnerName} — רוצה ללמוד.\n\nתאמו ביניכן מועד קצר 1:1.\n\nנבחרת`,
+                    )}
+                  >
+                    מייל
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {!!donePairs.length && (
+            <div className="clay compact-card" style={{ marginTop: 10 }}>
+              <div className="small muted" style={{ marginBottom: 6 }}>הושלמו ({donePairs.length})</div>
+              {donePairs.map((p) => (
+                <div key={p.id} className="pair-row done">
+                  <span>
+                    <strong>{p.learnerName}</strong>
+                    <span className="muted"> ← </span>
+                    {p.mentorName}
+                  </span>
+                  <span className="small muted">{p.capabilityTitle}</span>
+                  <PairDoneCheck pair={p} />
+                </div>
+              ))}
+            </div>
+          )}
           {!!pairing.unmatched.length && (
-            <div className="clay" style={{ padding: 16, marginTop: 12 }}>
-              <h2>מחכות למלמדת</h2>
+            <div className="clay compact-card" style={{ marginTop: 10 }}>
+              <div className="small muted" style={{ marginBottom: 6 }}>מחכות למלמדת</div>
               {pairing.unmatched.map((u, i) => (
-                <div key={`${u.name}-${i}`} className="name-row">
+                <div key={`${u.name}-${i}`} className="pair-row">
                   <span>{u.name}</span>
                   <span className="small muted">{u.capabilityTitle}</span>
                 </div>
@@ -168,7 +215,7 @@ export function AdminDash() {
       )}
 
       {tab === "meetings" && (
-        <section>
+        <section className="compact-stack">
           {!data.meetings.length && <p>אין מפגשים. מוסיפים בתוכן → מפגשים, כולל קישור כניסה.</p>}
           {data.meetings
             .slice()
@@ -190,56 +237,41 @@ export function AdminDash() {
                 ``,
                 `נבחרת`,
               ].filter((line) => line !== "").join("\n");
+              const open = openMeet === m.id;
               return (
-                <article key={m.id} className="clay" style={{ padding: 16, marginBottom: 12 }}>
-                  <div className="small muted">{m.topic}</div>
-                  <h2>{m.title}</h2>
-                  <p>{formatHebDate(m.datetime)} · {m.location || "מקום טרם נקבע"}</p>
-                  {link && <p><a href={link} dir="ltr" target="_blank" rel="noreferrer">{link}</a></p>}
-                  <p className="small">{coming.length} מתכוונות להגיע · {came.length} סומנו כהשתתפו · {data.teachers.length - coming.length} בלי אישור</p>
-                  <div className="name-list">
-                    <strong>מגיעות</strong>
-                    {!comingTeachers.length && <p className="small">עוד אף אחת לא אישרה הגעה.</p>}
-                    {comingTeachers.map((t) => (
-                      <div key={t!.id} className="name-row">
-                        <span>{t!.firstName} {t!.lastName}</span>
-                        <span className="small muted" dir="ltr">{t!.email}</span>
+                <article key={m.id} className="clay compact-card">
+                  <button className="compact-head" onClick={() => setOpenMeet(open ? null : m.id)}>
+                    <span>
+                      <strong>{m.title}</strong>
+                      <span className="small muted"> {m.topic}</span>
+                    </span>
+                    <span className="small muted">
+                      {coming.length} מגיעות · {came.length} השתתפו
+                    </span>
+                  </button>
+                  <p className="small compact-hint">{formatHebDate(m.datetime)}{m.location ? ` · ${m.location}` : ""}</p>
+                  {open && (
+                    <div className="compact-body">
+                      {link && <p className="small"><a href={link} dir="ltr" target="_blank" rel="noreferrer">{link}</a></p>}
+                      {!!comingTeachers.length && (
+                        <p className="small"><strong>מגיעות: </strong>{comingTeachers.map((t) => `${t!.firstName} ${t!.lastName}`).join(" · ")}</p>
+                      )}
+                      <div className="row" style={{ marginTop: 6 }}>
+                        <button className="pill btn-ink small" disabled={!emails.length} onClick={() => openMail(emails, m.title, body)}>
+                          מייל
+                        </button>
+                        <button className="pill btn-primary small" disabled={!emails.length} onClick={() => void ping(emails.join(", "))}>
+                          העתקת מיילים
+                        </button>
+                        {link && (
+                          <button className="pill btn-yellow small" onClick={() => void ping(link)}>העתקת קישור</button>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                  <div className="row" style={{ marginTop: 10 }}>
-                    <button
-                      className="pill btn-ink small"
-                      disabled={!emails.length}
-                      onClick={() => openMail(emails, m.title, body)}
-                    >
-                      שלחי קישור למייל
-                    </button>
-                    <button className="pill btn-primary small" disabled={!emails.length} onClick={() => void ping(emails.join(", "))}>
-                      העתקת מיילים
-                    </button>
-                    {link && (
-                      <button className="pill btn-yellow small" onClick={() => void ping(link)}>העתקת קישור</button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </article>
               );
             })}
-        </section>
-      )}
-
-      {tab === "map" && (
-        <section>
-          <div className="clay" style={{ padding: 16, marginBottom: 14 }}>
-            <h2>מפת חום</h2>
-            <HeatMap />
-          </div>
-          <h2>לפי כלי</h2>
-          <div className="grid-tools">
-            {data.tools.filter((t) => data.capabilities.some((c) => c.toolId === t.id)).map((tool) => (
-              <ToolOrbit key={tool.id} tool={tool} showNames />
-            ))}
-          </div>
         </section>
       )}
     </GoogleGate>

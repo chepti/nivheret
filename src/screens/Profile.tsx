@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
-import { Bookmark, Sparkles } from "lucide-react";
+import { Bookmark, Sparkles, Users } from "lucide-react";
 import { navigate } from "../app/router";
 import { useStore } from "../app/store";
 import { GoogleGate } from "../components/GoogleGate";
 import { ItemThumb } from "../components/ClayIcons";
+import { PairDoneCheck } from "../components/PairDoneCheck";
 import { teacherBadgeRows } from "../lib/badges";
+import { myPairs } from "../lib/leadership";
 import { LEARN_HOW_LABEL } from "../lib/status";
 
 export function Profile() {
@@ -27,6 +29,7 @@ export function Profile() {
   const saved = data.capabilities.filter((c) => mine.some((r) => r.capabilityId === c.id && r.savedForLater));
   const learnView = showAllLearn ? learn : learn.slice(0, 3);
   const savedView = showAllSaved ? saved : saved.slice(0, 3);
+  const pairs = useMemo(() => myPairs(data, session.teacherId), [data, session.teacherId]);
 
   return (
     <GoogleGate>
@@ -50,6 +53,27 @@ export function Profile() {
           ))}
         </div>
       </section>
+
+      {!!pairs.length && (
+        <section className="clay" style={{ padding: 18, marginTop: 12 }}>
+          <h2><Users size={18} /> צמדי למידה</h2>
+          <p className="small">אפשר לסמן כאן או בצ׳קליסט שהמפגש 1:1 כבר קרה.</p>
+          {pairs.map((p) => {
+            const me = session.teacherId.toLowerCase();
+            const other = p.learnerId.toLowerCase() === me ? p.mentorName : p.learnerName;
+            const role = p.learnerId.toLowerCase() === me ? "לומדת עם" : "מלמדת את";
+            return (
+              <div key={p.id} className="profile-item">
+                <div className="cap-line-text">
+                  <strong>{p.capabilityTitle}</strong>
+                  <span className="small muted">{role} {other}</span>
+                </div>
+                <PairDoneCheck pair={p} label={p.done ? "קיימנו ✓" : "קיימנו 1:1"} />
+              </div>
+            );
+          })}
+        </section>
+      )}
 
       <section className="clay" style={{ padding: 18, marginTop: 12 }}>
         <h2>רוצה ללמוד</h2>

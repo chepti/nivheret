@@ -15,6 +15,7 @@ import {
   deleteTeacher,
   pullRemote,
   pushContent,
+  pushPair,
   pushReaction,
   pushResponse,
   pushRsvp,
@@ -25,6 +26,7 @@ import {
 import type {
   AppData,
   CapabilityResponse,
+  LearningPair,
   MeetingRsvp,
   Reaction,
   Session,
@@ -90,6 +92,7 @@ type Store = {
   responseOf: (capabilityId: string, teacherId?: string) => CapabilityResponse;
   upsertRsvp: (patch: Partial<MeetingRsvp> & { meetingId: string }) => void;
   upsertReaction: (patch: Partial<Reaction> & { capabilityId: string }) => void;
+  upsertPair: (pair: LearningPair) => void;
   myBadges: string[];
 };
 
@@ -140,6 +143,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             responses: mergeResponses(prev.responses, remote.responses ?? []),
             rsvps: remote.rsvps ?? prev.rsvps,
             reactions: remote.reactions ?? prev.reactions,
+            pairs: remote.pairs ?? prev.pairs,
           }));
           if (recovered) {
             skipRemoteContent.current = true;
@@ -389,6 +393,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const upsertPair: Store["upsertPair"] = (pair) => {
+    if (!session) return;
+    const me = session.teacherId.toLowerCase();
+    const involved = pair.learnerId.toLowerCase() === me || pair.mentorId.toLowerCase() === me;
+    if (!isAdmin && !involved) return;
+    setDataState((prev) => {
+      const next: LearningPair = {
+        ...pair,
+        doneAt: pair.done ? pair.doneAt ?? new Date().toISOString() : undefined,
+      };
+      const i = prev.pairs.findIndex((p) => p.id === next.id);
+      const pairs = [...prev.pairs];
+      if (i >= 0) pairs[i] = next;
+      else pairs.push(next);
+      void pushPair(next);
+      return { ...prev, pairs };
+    });
+  };
+
   const myBadges = useMemo(
     () => (session ? earnedBadgeIds(data, session.teacherId) : []),
     [data, session],
@@ -412,6 +435,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     responseOf,
     upsertRsvp,
     upsertReaction,
+    upsertPair,
     myBadges,
   };
 

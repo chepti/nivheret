@@ -103,6 +103,15 @@ export type MeetingRsvp = {
   attended: boolean;
 };
 
+export type LearningPair = {
+  id: string;
+  capabilityId: string;
+  learnerId: string;
+  mentorId: string;
+  done: boolean;
+  doneAt?: string;
+};
+
 export type BadgeMetric =
   | "wantToLearn"
   | "mastered"
@@ -140,6 +149,7 @@ export type AppData = {
   reactions: Reaction[];
   meetings: Meeting[];
   rsvps: MeetingRsvp[];
+  pairs: LearningPair[];
   badges: BadgeDef[];
   settings: Settings;
 };

@@ -86,15 +86,22 @@ export function capabilityInsights(data: AppData): CapInsight[] {
 }
 
 export type Pair = {
+  id: string;
   capabilityId: string;
   capabilityTitle: string;
   learnerId: string;
   learnerName: string;
   mentorId: string;
   mentorName: string;
+  done: boolean;
 };
 
+export function pairKey(learnerId: string, mentorId: string, capabilityId: string): string {
+  return `${learnerId.toLowerCase()}__${mentorId.toLowerCase()}__${capabilityId}`;
+}
+
 export function suggestedPairs(data: AppData): { pairs: Pair[]; unmatched: { name: string; capabilityTitle: string }[] } {
+  const doneMap = new Map((data.pairs ?? []).map((p) => [p.id, p]));
   const pairs: Pair[] = [];
   const unmatched: { name: string; capabilityTitle: string }[] = [];
   for (const row of capabilityInsights(data)) {
@@ -106,15 +113,25 @@ export function suggestedPairs(data: AppData): { pairs: Pair[]; unmatched: { nam
         unmatched.push({ name: learner.name, capabilityTitle: row.cap.title });
         return;
       }
+      const id = pairKey(learner.id, mentor.id, row.cap.id);
       pairs.push({
+        id,
         capabilityId: row.cap.id,
         capabilityTitle: row.cap.title,
         learnerId: learner.id,
         learnerName: learner.name,
         mentorId: mentor.id,
         mentorName: mentor.name,
+        done: Boolean(doneMap.get(id)?.done),
       });
     });
   }
   return { pairs, unmatched };
+}
+
+export function myPairs(data: AppData, teacherId: string): Pair[] {
+  const id = teacherId.toLowerCase();
+  return suggestedPairs(data).pairs.filter(
+    (p) => p.learnerId.toLowerCase() === id || p.mentorId.toLowerCase() === id,
+  );
 }

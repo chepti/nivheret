@@ -3,7 +3,9 @@ import { Sparkles } from "lucide-react";
 import { navigate } from "../app/router";
 import { useStore } from "../app/store";
 import { ClayIcon, ItemThumb } from "../components/ClayIcons";
+import { PairDoneCheck } from "../components/PairDoneCheck";
 import { ProductDrawer } from "../components/ProductDrawer";
+import { myPairs } from "../lib/leadership";
 import { LEARN_HOW_LABEL, primaryStatus, STATUS_META, type StatusKey } from "../lib/status";
 import type { LearnHow } from "../lib/types";
 import { ToolOrbit } from "../viz/ToolOrbit";
@@ -22,6 +24,11 @@ export function Checklist() {
     setSavedFlash(true);
     window.setTimeout(() => setSavedFlash(false), 900);
   };
+
+  const myPairList = useMemo(
+    () => (session ? myPairs(data, session.teacherId) : []),
+    [data, session],
+  );
 
   const answeredTeachers = useMemo(() => {
     const ids = new Set(data.responses.filter((r) => r.wantToLearn || r.mastered || r.hasProduct || r.readyToTeach).map((r) => r.teacherId));
@@ -134,6 +141,17 @@ export function Checklist() {
                                 <input type="checkbox" checked={r.readyToTeach} onChange={(e) => { upsertResponse({ capabilityId: cap.id, readyToTeach: e.target.checked }); flash(); }} />
                                 מוכנה ללמד עמיתה 1:1
                               </label>
+                              {myPairList.filter((p) => p.capabilityId === cap.id).map((p) => {
+                                const me = session!.teacherId.toLowerCase();
+                                const other = p.learnerId.toLowerCase() === me ? p.mentorName : p.learnerName;
+                                return (
+                                  <PairDoneCheck
+                                    key={p.id}
+                                    pair={p}
+                                    label={p.done ? `קיימנו 1:1 עם ${other} ✓` : `קיימנו 1:1 עם ${other}`}
+                                  />
+                                );
+                              })}
                             </div>
                           )}
                         </div>

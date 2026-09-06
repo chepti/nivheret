@@ -460,6 +460,40 @@ p { margin: 0 0 10px; color: var(--muted); line-height: 1.55; }
   .cms-tree { position: relative; top: 0; }
 }
 
+.compact-stack { display: grid; gap: 8px; }
+.compact-card { padding: 10px 12px; margin-bottom: 0; }
+.compact-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  text-align: right;
+}
+.compact-hint { margin: 4px 0 0; color: var(--ink); }
+.compact-body { margin-top: 8px; }
+.compact-body p { margin: 4px 0; }
+.pair-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3ead6;
+  text-align: right;
+}
+.pair-row:last-child { border-bottom: 0; }
+.pair-row.done { opacity: 0.72; }
+.pair-done { margin: 0; white-space: nowrap; }
+@media (max-width: 640px) {
+  .compact-head { flex-direction: column; align-items: flex-start; }
+  .pair-row { flex-direction: column; align-items: flex-start; }
+}
+
 .name-list { margin-top: 10px; }
 .name-row {
   display: flex;

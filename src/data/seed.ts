@@ -199,6 +199,7 @@ export function createSeed(): AppData {
     reactions: [],
     meetings,
     rsvps: [],
+    pairs: [],
     badges,
     settings,
   };

@@ -1,10 +1,17 @@
+import { useMemo } from "react";
 import { Bell, HousePlus } from "lucide-react";
 import { useStore } from "../app/store";
 import { GoogleGate } from "../components/GoogleGate";
+import { PairDoneCheck } from "../components/PairDoneCheck";
+import { myPairs } from "../lib/leadership";
 import { formatHebDate } from "../lib/status";
 
 export function Meetings() {
   const { data, session, upsertRsvp } = useStore();
+  const pairs = useMemo(
+    () => (session ? myPairs(data, session.teacherId) : []),
+    [data, session],
+  );
   if (!session) return null;
 
   const remindInstall = async () => {
@@ -22,6 +29,24 @@ export function Meetings() {
     <GoogleGate>
       <h1>מפגשי צוות</h1>
       <p>מפגשי צוות שההנהלה פותחת כאן באפליקציה.</p>
+      {!!pairs.length && (
+        <section className="clay compact-card" style={{ marginBottom: 12 }}>
+          <h2 style={{ fontSize: "1.05rem" }}>הצמדים שלי</h2>
+          {pairs.map((p) => {
+            const me = session.teacherId.toLowerCase();
+            const other = p.learnerId.toLowerCase() === me ? p.mentorName : p.learnerName;
+            return (
+              <div key={p.id} className="pair-row">
+                <span>
+                  <strong>{p.capabilityTitle}</strong>
+                  <span className="small muted"> · {other}</span>
+                </span>
+                <PairDoneCheck pair={p} label={p.done ? "קיימנו ✓" : "קיימנו 1:1"} />
+              </div>
+            );
+          })}
+        </section>
+      )}
       <div className="row" style={{ marginBottom: 12 }}>
         <button className="pill btn-primary" onClick={() => void remindNotify()}><Bell size={16} /> הפעילי תזכורות</button>
         <button className="pill btn-yellow" onClick={() => void remindInstall()}><HousePlus size={16} /> שמרי במסך הבית</button>

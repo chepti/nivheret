@@ -12,12 +12,13 @@ import { getFirebase } from "./firebase";
 import type {
   AppData,
   CapabilityResponse,
+  LearningPair,
   MeetingRsvp,
   Reaction,
   Teacher,
 } from "./types";
 
-export type ContentDoc = Omit<AppData, "teachers" | "responses" | "reactions" | "rsvps">;
+export type ContentDoc = Omit<AppData, "teachers" | "responses" | "reactions" | "rsvps" | "pairs">;
 
 function teacherDocId(email: string): string {
   return email.toLowerCase();
@@ -31,17 +32,19 @@ export async function pullRemote(): Promise<Partial<AppData> | null> {
   const fb = getFirebase();
   if (!fb) return null;
   const contentSnap = await getDoc(doc(fb.db, "content", "app"));
-  const [teachersSnap, responsesSnap, rsvpsSnap, reactionsSnap] = await Promise.all([
+  const [teachersSnap, responsesSnap, rsvpsSnap, reactionsSnap, pairsSnap] = await Promise.all([
     getDocs(collection(fb.db, "teachers")),
     getDocs(collection(fb.db, "responses")),
     getDocs(collection(fb.db, "rsvps")),
     getDocs(collection(fb.db, "reactions")),
+    getDocs(collection(fb.db, "pairs")),
   ]);
   const remote: Partial<AppData> = {
     teachers: teachersSnap.docs.map((d) => d.data() as Teacher),
     responses: responsesSnap.docs.map((d) => d.data() as CapabilityResponse),
     rsvps: rsvpsSnap.docs.map((d) => d.data() as MeetingRsvp),
     reactions: reactionsSnap.docs.map((d) => d.data() as Reaction),
+    pairs: pairsSnap.docs.map((d) => d.data() as LearningPair),
   };
   if (contentSnap.exists()) Object.assign(remote, contentSnap.data() as ContentDoc);
   return remote;
@@ -110,6 +113,12 @@ export async function pushReaction(row: Reaction): Promise<void> {
   await setDoc(doc(fb.db, "reactions", pairId(row.teacherId, row.capabilityId)), row);
 }
 
+export async function pushPair(row: LearningPair): Promise<void> {
+  const fb = getFirebase();
+  if (!fb) return;
+  await setDoc(doc(fb.db, "pairs", row.id), row);
+}
+
 export function watchShared(onChange: (part: Partial<AppData>) => void): () => void {
   const fb = getFirebase();
   if (!fb) return () => undefined;
@@ -128,6 +137,9 @@ export function watchShared(onChange: (part: Partial<AppData>) => void): () => v
     }),
     onSnapshot(collection(fb.db, "reactions"), (snap) => {
       onChange({ reactions: snap.docs.map((d) => d.data() as Reaction) });
+    }),
+    onSnapshot(collection(fb.db, "pairs"), (snap) => {
+      onChange({ pairs: snap.docs.map((d) => d.data() as LearningPair) });
     }),
   ];
   return () => unsub.forEach((fn) => fn());

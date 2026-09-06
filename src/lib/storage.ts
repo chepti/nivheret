@@ -20,6 +20,7 @@ function mergeSeed(saved: AppData | null): AppData {
     reactions: saved.reactions ?? [],
     meetings: saved.meetings ?? seed.meetings,
     rsvps: saved.rsvps ?? [],
+    pairs: saved.pairs ?? [],
     badges: saved.badges?.length ? saved.badges : seed.badges,
     settings: { ...seed.settings, ...saved.settings },
   };
