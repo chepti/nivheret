@@ -21,7 +21,7 @@ export function GoogleGate({ children }: { children: ReactNode }) {
         {teacher ? ` (${teacher.email})` : ""}.
       </p>
       {!firebaseOn && (
-        <p className="small">Firebase עדיין לא מחובר. בהדגמה המקומית נאשר את אותו מייל בלי חלון גוגל.</p>
+        <p className="small">אפשר להמשיך עם המייל שזיהית.</p>
       )}
       <div style={{ display: "flex", justifyContent: "center" }}>
         <GoogleSignButton />

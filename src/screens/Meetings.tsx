@@ -21,7 +21,7 @@ export function Meetings() {
   return (
     <GoogleGate>
       <h1>מפגשי צוות</h1>
-      <p>לא רק אוריינות דיגיטלית — כל מפגש שההנהלה פותחת ב־CMS.</p>
+      <p>מפגשי צוות שההנהלה פותחת כאן באפליקציה.</p>
       <div className="row" style={{ marginBottom: 12 }}>
         <button className="pill btn-primary" onClick={() => void remindNotify()}><Bell size={16} /> הפעילי תזכורות</button>
         <button className="pill btn-yellow" onClick={() => void remindInstall()}><HousePlus size={16} /> שמרי במסך הבית</button>

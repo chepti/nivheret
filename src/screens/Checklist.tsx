@@ -68,7 +68,7 @@ export function Checklist() {
                     </div>
                   </div>
                   {caps.length === 0 ? (
-                    <p className="small">היכולות יתווספו כאן מה־CMS כשיתמלא החודש.</p>
+                    <p className="small">עוד אין יכולות לתקופה הזו.</p>
                   ) : (
                     caps.map((cap) => {
                       const r = responseOf(cap.id);

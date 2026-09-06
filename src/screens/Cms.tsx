@@ -3,6 +3,7 @@ import { Award, BookOpen, CalendarDays, ChevronLeft, GripVertical, Plus, Setting
 import { useStore } from "../app/store";
 import { GoogleGate } from "../components/GoogleGate";
 import { ClayIcon } from "../components/ClayIcons";
+import { CloudSyncIcon } from "../components/CloudSyncIcon";
 import { ImagePaste } from "../components/ImagePaste";
 import { METRIC_OPTIONS, normalizeBadge } from "../lib/badges";
 import { newId } from "../lib/storage";
@@ -27,7 +28,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 }
 
 export function Cms() {
-  const { data, setData, isAdmin, session, syncReady, cloudSave } = useStore();
+  const { data, setData, isAdmin, session, cloudSave } = useStore();
   const [node, setNode] = useState<Node>({ kind: "home" });
   const [q, setQ] = useState("");
   const [openPeriod, setOpenPeriod] = useState<string | null>("elul-tishrei");
@@ -121,11 +122,12 @@ export function Cms() {
         <div>
           <div className="cms-sticky clay">
             <div>
-              <div className="small muted">עריכת תוכן</div>
-              <h1 style={{ fontSize: "1.4rem", margin: 0 }}>{titleOf(node)}</h1>
-              <div className="small" style={{ color: cloudSave === "error" ? "#c0392b" : "var(--mastered)", fontWeight: cloudSave === "error" ? 700 : 400 }}>
-                {!syncReady ? "טוען את הענן…" : cloudSave === "saving" ? "שומר בענן…" : cloudSave === "saved" ? "נשמר בענן — אפשר לרענן" : cloudSave === "error" ? "השמירה לענן נכשלה — העריכה עדיין אצלך במכשיר" : "השינויים נשמרים אוטומטית לענן"}
+              <div className="row" style={{ gap: 8 }}>
+                <div className="small muted">עריכת תוכן</div>
+                <CloudSyncIcon size={18} />
               </div>
+              <h1 style={{ fontSize: "1.4rem", margin: 0 }}>{titleOf(node)}</h1>
+              {cloudSave === "error" && <div className="small" style={{ color: "#c0392b" }}>השמירה נכשלה — העריכה נשארה במכשיר</div>}
             </div>
             <div className="row">
               {node.kind === "period" && <button className="pill btn-yellow" onClick={() => addTool(node.id)}><Plus size={16} /> כלי לתקופה</button>}
@@ -139,7 +141,7 @@ export function Cms() {
 
           {node.kind === "home" && (
             <div className="cms-home">
-              <p>בחרי תקופה בעץ, ואז כלי — משם עורכים יכולות ושיעורים. כל שינוי נשמר לענן; תראי «נשמר בענן» למעלה אחרי הקלדה.</p>
+              <p>בחרי תקופה בעץ, ואז כלי — משם עורכים יכולות ושיעורים. כל שינוי נשמר לבד.</p>
               <div className="grid-tools">
                 {data.periods.map((p) => (
                   <button key={p.id} className="clay cms-card" onClick={() => { setOpenPeriod(p.id); setNode({ kind: "period", id: p.id }); }}>

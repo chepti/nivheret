@@ -469,6 +469,18 @@ p { margin: 0 0 10px; color: var(--muted); line-height: 1.55; }
   border-bottom: 1px solid #f3ead6;
   text-align: right;
 }
+.cloud-sync {
+  display: inline-grid;
+  place-items: center;
+  color: var(--muted);
+  width: 32px;
+  height: 32px;
+}
+.cloud-sync.saving, .cloud-sync.loading { color: var(--ink); }
+.cloud-sync.saving svg, .cloud-sync.loading svg { animation: cloud-spin 0.75s linear infinite; }
+.cloud-sync.saved { color: var(--mastered); }
+.cloud-sync.error { color: #c0392b; }
+@keyframes cloud-spin { to { transform: rotate(360deg); } }
 .muted { color: var(--muted); }
 .small { font-size: 0.82rem; }
 .center { text-align: center; }

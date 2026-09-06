@@ -127,7 +127,7 @@ export function Learn({ route }: { route: Route }) {
               {tool.image ? <ItemThumb image={tool.image} size={128} shape="free" /> : <ClayIcon name={tool.icon} bg={tool.color} />}
               <div className="tool-head-text">
                 <h2>{tool.name}</h2>
-                <p className="small">{lessons.length ? `${lessons.length} שיעורים מוכנים` : "עדיין אין תוכן — מוכן ב־CMS"}</p>
+                <p className="small">{lessons.length ? `${lessons.length} שיעורים מוכנים` : "עוד אין שיעורים"}</p>
               </div>
             </div>
             {lessons.map((l) => {

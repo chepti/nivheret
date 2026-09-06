@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { navigate, type Route } from "../app/router";
 import { useStore } from "../app/store";
+import { CloudSyncIcon } from "./CloudSyncIcon";
 import type { RouteName } from "../lib/types";
 
 const TABS: { name: RouteName; label: string; icon: typeof UserRound }[] = [
@@ -37,6 +38,7 @@ export function Shell({ route, children }: { route: Route; children: React.React
             <strong>{teacher ? `${teacher.firstName} ${teacher.lastName}` : session.email}</strong>
           </div>
           <div className="row">
+            <CloudSyncIcon />
             {needGoogle && (
               <button className="pill btn-yellow small" onClick={() => { void linkGoogle(); }}>
                 כניסה עם גוגל
