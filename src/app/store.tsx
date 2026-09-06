@@ -10,7 +10,7 @@ import {
 import { earnedBadgeIds, normalizeBadge } from "../lib/badges";
 import { completeGoogleRedirect, firebaseEnabled, signInWithGoogle, signOutGoogle } from "../lib/firebase";
 import { emptyResponse } from "../lib/status";
-import { loadData, loadSession, saveData, saveSession } from "../lib/storage";
+import { dropUnwantedContent, loadData, loadSession, saveData, saveSession } from "../lib/storage";
 import {
   deleteTeacher,
   pullRemote,
@@ -133,8 +133,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             newerStamp(localAt, remoteAt) ||
             (adminHere && !remoteAt && contentFingerprint(local) !== contentFingerprint(remote));
           const recovered = keepLocalContent
-            ? { ...local, settings: { ...local.settings, contentUpdatedAt: new Date().toISOString() } }
+            ? dropUnwantedContent({ ...local, settings: { ...local.settings, contentUpdatedAt: new Date().toISOString() } })
             : null;
+          const remoteClean = dropUnwantedContent({
+            capabilities: remote.capabilities ?? local.capabilities,
+            lessons: remote.lessons ?? local.lessons,
+          });
+          const stripped =
+            (remote.capabilities?.length ?? 0) !== remoteClean.capabilities.length ||
+            (remote.lessons?.length ?? 0) !== remoteClean.lessons.length;
           setDataState((prev) => ({
             ...(recovered ?? prev),
             ...(keepLocalContent ? {} : remote),
@@ -144,7 +151,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             rsvps: remote.rsvps ?? prev.rsvps,
             reactions: remote.reactions ?? prev.reactions,
             pairs: remote.pairs ?? prev.pairs,
+            capabilities: keepLocalContent ? recovered!.capabilities : remoteClean.capabilities,
+            lessons: keepLocalContent ? recovered!.lessons : remoteClean.lessons,
           }));
+          if (stripped && !recovered) {
+            skipRemoteContent.current = true;
+            void pushContent({
+              ...local,
+              ...remote,
+              ...remoteClean,
+              settings: { ...(remote.settings ?? local.settings), contentUpdatedAt: new Date().toISOString() },
+            }).finally(() => {
+              window.setTimeout(() => {
+                skipRemoteContent.current = false;
+              }, 400);
+            });
+          }
           if (recovered) {
             skipRemoteContent.current = true;
             void pushContent(recovered)
@@ -165,13 +187,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           if (skipRemoteContent.current && isContentPart(part) && !("responses" in part) && !("teachers" in part)) {
             return;
           }
-          setDataState((prev) => ({
-            ...prev,
-            ...(skipRemoteContent.current && isContentPart(part) ? {} : part),
-            ...("responses" in part && part.responses
-              ? { responses: mergeResponses(prev.responses, part.responses) }
-              : {}),
-          }));
+          setDataState((prev) => {
+            const incoming = skipRemoteContent.current && isContentPart(part) ? {} : part;
+            const next = {
+              ...prev,
+              ...incoming,
+              ...("responses" in part && part.responses
+                ? { responses: mergeResponses(prev.responses, part.responses) }
+                : {}),
+            };
+            return incoming.capabilities || incoming.lessons ? dropUnwantedContent(next) : next;
+          });
         });
       } catch (err) {
         console.error("Firebase sync", err);
