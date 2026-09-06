@@ -25,7 +25,7 @@ export function ItemThumb({
 }: {
   image: string;
   size?: number;
-  shape?: "circle" | "soft";
+  shape?: "circle" | "soft" | "free";
   alt?: string;
 }) {
   return (
@@ -46,7 +46,7 @@ export function ClayIcon({
   size?: number;
   bg?: string;
   image?: string;
-  shape?: "circle" | "soft";
+  shape?: "circle" | "soft" | "free";
 }) {
   const box = size + 22;
   if (image) return <ItemThumb image={image} size={box} shape={shape} />;

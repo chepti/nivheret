@@ -59,7 +59,7 @@ export function Checklist() {
               return (
                 <article key={tool.id} className="clay tool-block">
                   <div className="tool-head">
-                    {tool.image ? <ItemThumb image={tool.image} size={120} shape="soft" /> : <ClayIcon name={tool.icon} bg={tool.color} />}
+                    {tool.image ? <ItemThumb image={tool.image} size={128} shape="free" /> : <ClayIcon name={tool.icon} bg={tool.color} />}
                     <div className="tool-head-text">
                       <h2>{tool.name}</h2>
                       <p className="small">{tool.subtitle}</p>

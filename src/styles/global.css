@@ -378,6 +378,12 @@ p { margin: 0 0 10px; color: var(--muted); line-height: 1.55; }
 }
 .item-thumb.circle { border-radius: 50%; }
 .item-thumb.soft { border-radius: 42% 58% 52% 48% / 38% 44% 56% 62%; }
+.item-thumb.free {
+  overflow: visible;
+  border-radius: 0;
+  box-shadow: none;
+  background: none;
+}
 .item-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .cms-field { display: block; margin-bottom: 12px; }
 .cms-field > span { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 6px; padding-inline-start: 4px; }

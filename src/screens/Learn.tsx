@@ -38,8 +38,8 @@ export function Learn({ route }: { route: Route }) {
           {(cap?.image || data.tools.find((t) => t.id === cap?.toolId)?.image) && (
             <ItemThumb
               image={cap?.image || data.tools.find((t) => t.id === cap?.toolId)?.image || ""}
-              size={132}
-              shape="soft"
+              size={148}
+              shape="free"
               alt=""
             />
           )}
@@ -124,7 +124,7 @@ export function Learn({ route }: { route: Route }) {
         return (
           <article key={tool.id} className="clay tool-block">
             <div className="tool-head">
-              {tool.image ? <ItemThumb image={tool.image} size={120} shape="soft" /> : <ClayIcon name={tool.icon} bg={tool.color} />}
+              {tool.image ? <ItemThumb image={tool.image} size={128} shape="free" /> : <ClayIcon name={tool.icon} bg={tool.color} />}
               <div className="tool-head-text">
                 <h2>{tool.name}</h2>
                 <p className="small">{lessons.length ? `${lessons.length} שיעורים מוכנים` : "עדיין אין תוכן — מוכן ב־CMS"}</p>
@@ -135,7 +135,7 @@ export function Learn({ route }: { route: Route }) {
               const lessonCap = caps.find((c) => c.id === l.capabilityId);
               return (
                 <button key={l.id} className="clay cap-card cap-line" onClick={() => navigate("lesson", l.id)}>
-                  {lessonCap?.image && <ItemThumb image={lessonCap.image} size={52} shape="soft" />}
+                  {lessonCap?.image && <ItemThumb image={lessonCap.image} size={56} shape="free" />}
                   <span className="cap-line-text">
                     <strong>{l.title}</strong>
                     <span className="small muted">{r.completedLearning ? "הושלם ✓" : r.savedForLater ? "שמור להמשך" : "פתחי שיעור"}</span>
