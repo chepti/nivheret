@@ -99,7 +99,13 @@ type Store = {
 const Ctx = createContext<Store | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [data, setDataState] = useState<AppData>(() => loadData());
+  const [data, setDataStateRaw] = useState<AppData>(() => dropUnwantedContent(loadData()));
+  const setDataState = (updater: AppData | ((prev: AppData) => AppData)) => {
+    setDataStateRaw((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      return dropUnwantedContent(next);
+    });
+  };
   const [session, setSessionState] = useState<Session | null>(() => loadSession());
   const [syncReady, setSyncReady] = useState(!firebaseEnabled());
   const [cloudSave, setCloudSave] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -140,8 +146,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             lessons: remote.lessons ?? local.lessons,
           });
           const stripped =
-            (remote.capabilities?.length ?? 0) !== remoteClean.capabilities.length ||
-            (remote.lessons?.length ?? 0) !== remoteClean.lessons.length;
+            JSON.stringify(remote.capabilities ?? []) !== JSON.stringify(remoteClean.capabilities) ||
+            JSON.stringify(remote.lessons ?? []) !== JSON.stringify(remoteClean.lessons);
           setDataState((prev) => ({
             ...(recovered ?? prev),
             ...(keepLocalContent ? {} : remote),

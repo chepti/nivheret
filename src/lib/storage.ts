@@ -25,6 +25,50 @@ const DROPPED_CAP_IDS = new Set([
   "cap-meet-beyond",
 ]);
 
+const DROPPED_TITLES = new Set([
+  "הזמנת תלמידות",
+  "ארגון בנושאים",
+  "בדיקה ומשוב",
+  "הודעה לכיתה",
+  "שיתוף עם מורה עמיתה",
+  "מעקב התקדמות",
+]);
+
+export function isDroppedCapability(id: string, title?: string): boolean {
+  if (DROPPED_CAP_IDS.has(id)) return true;
+  const t = (title ?? "").replace(/\s+/g, " ").trim();
+  return DROPPED_TITLES.has(t);
+}
+
+/** משפטים שמוזגו בטעות ליכולות שנשארו — אחרי שהוסרו ככרטיסים נפרדים. */
+const EXTRA_DESCRIPTION_CHUNKS = [
+  "הזמנת תלמידות ומורים, לפרסם עדכון שכל התלמידות רואות.",
+  "הזמנת תלמידות ומורים, לפרסם עדכון שכל התלמידות רואות",
+  "הזמנת תלמידות ומורים",
+  "לפרסם עדכון שכל התלמידות רואות.",
+  "לפרסם עדכון שכל התלמידות רואות",
+  "ארגון בנושאים",
+  "לבדוק עבודה, להחזיר הערה ולתת ציון.",
+  "לבדוק עבודה, להחזיר הערה ולתת ציון",
+];
+
+function tidyDescription(text: string): string {
+  return text
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{2,}/g, "\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/[ \t]+([.])/g, "$1")
+    .trim();
+}
+
+export function sanitizeCapabilityDescription(description: string): string {
+  let next = description ?? "";
+  for (const chunk of EXTRA_DESCRIPTION_CHUNKS) {
+    next = next.split(chunk).join("");
+  }
+  return tidyDescription(next);
+}
+
 const DROPPED_LESSON_IDS = new Set([
   "lesson-class-open",
   "lesson-class-invite",
@@ -58,7 +102,12 @@ const DROPPED_LESSON_IDS = new Set([
 ]);
 
 export function dropUnwantedContent<T extends Pick<AppData, "capabilities" | "lessons">>(data: T): T {
-  const capabilities = (data.capabilities ?? []).filter((c) => !DROPPED_CAP_IDS.has(c.id));
+  const capabilities = (data.capabilities ?? [])
+    .filter((c) => !isDroppedCapability(c.id, c.title))
+    .map((c) => {
+      const description = sanitizeCapabilityDescription(c.description);
+      return description === c.description ? c : { ...c, description };
+    });
   const keep = new Set(capabilities.map((c) => c.id));
   const lessons = (data.lessons ?? []).filter(
     (l) => keep.has(l.capabilityId) && !DROPPED_CAP_IDS.has(l.capabilityId) && !DROPPED_LESSON_IDS.has(l.id),

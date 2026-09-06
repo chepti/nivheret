@@ -6,6 +6,7 @@ import { ClayIcon, ItemThumb } from "../components/ClayIcons";
 import { PairDoneCheck } from "../components/PairDoneCheck";
 import { ProductDrawer } from "../components/ProductDrawer";
 import { myPairs } from "../lib/leadership";
+import { isDroppedCapability } from "../lib/storage";
 import { LEARN_HOW_LABEL, primaryStatus, STATUS_META, type StatusKey } from "../lib/status";
 import type { LearnHow } from "../lib/types";
 import { ToolOrbit } from "../viz/ToolOrbit";
@@ -64,7 +65,9 @@ export function Checklist() {
               <span className="small muted"> · {period.months}</span>
             </div>
             {periodTools.map((tool) => {
-              const caps = data.capabilities.filter((c) => c.toolId === tool.id).sort((a, b) => a.order - b.order);
+              const caps = data.capabilities
+                .filter((c) => c.toolId === tool.id && !isDroppedCapability(c.id, c.title))
+                .sort((a, b) => a.order - b.order);
               return (
                 <article key={tool.id} className="clay tool-block">
                   <div className="tool-head">
