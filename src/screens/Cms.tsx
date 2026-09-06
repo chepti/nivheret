@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { Award, BookOpen, CalendarDays, ChevronLeft, GripVertical, Plus, Settings, Trash2, Users } from "lucide-react";
+import { Award, BookOpen, CalendarDays, ChevronDown, ChevronLeft, GripVertical, Plus, Settings, Trash2, Users } from "lucide-react";
 import { useStore } from "../app/store";
 import { GoogleGate } from "../components/GoogleGate";
 import { ClayIcon } from "../components/ClayIcons";
@@ -36,6 +36,8 @@ export function Cms() {
   const [openPeriod, setOpenPeriod] = useState<string | null>("elul-tishrei");
   const [dragCap, setDragCap] = useState<string | null>(null);
   const [overCap, setOverCap] = useState<string | null>(null);
+  const [openLesson, setOpenLesson] = useState<string | null>(null);
+  const [openQuiz, setOpenQuiz] = useState<Record<string, boolean>>({});
 
   const tool = node.kind === "tool" ? data.tools.find((t) => t.id === node.id) : undefined;
   const period = node.kind === "period" ? data.periods.find((p) => p.id === node.id) : undefined;
@@ -186,29 +188,35 @@ export function Cms() {
 
               {node.tab === "info" && (
                 <div className="clay cms-editor">
-                  <Field label="שם הכלי">
-                    <input className="field" value={tool.name} onChange={(e) => patchTool(tool.id, { name: e.target.value })} />
-                  </Field>
-                  <Field label="כותרת משנה">
-                    <input className="field" value={tool.subtitle} onChange={(e) => patchTool(tool.id, { subtitle: e.target.value })} />
-                  </Field>
-                  <Field label="תיאור">
-                    <textarea className="field" value={tool.description} onChange={(e) => patchTool(tool.id, { description: e.target.value })} />
-                  </Field>
-                  <Field label="תקופה">
-                    <select className="field" value={tool.periodId} onChange={(e) => patchTool(tool.id, { periodId: e.target.value })}>
-                      {data.periods.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
-                  </Field>
-                  <Field label="תמונה 1×1 — תוצג בעיגול ליד הכלי">
-                    <ImagePaste
-                      square
-                      maxEdge={200}
-                      value={tool.image}
-                      hint="לחצי בתיבה ואז Ctrl+V, או גררי. PNG נשאר שקוף."
-                      onChange={(image) => patchTool(tool.id, { image: image || undefined })}
-                    />
-                  </Field>
+                  <div className="cms-split">
+                    <div>
+                      <Field label="שם הכלי">
+                        <input className="field" value={tool.name} onChange={(e) => patchTool(tool.id, { name: e.target.value })} />
+                      </Field>
+                      <Field label="כותרת משנה">
+                        <input className="field" value={tool.subtitle} onChange={(e) => patchTool(tool.id, { subtitle: e.target.value })} />
+                      </Field>
+                      <Field label="תיאור">
+                        <textarea className="field" value={tool.description} onChange={(e) => patchTool(tool.id, { description: e.target.value })} />
+                      </Field>
+                      <Field label="תקופה">
+                        <select className="field" value={tool.periodId} onChange={(e) => patchTool(tool.id, { periodId: e.target.value })}>
+                          {data.periods.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                      </Field>
+                    </div>
+                    <div className="cms-side-image">
+                      <Field label="תמונה 1×1">
+                        <ImagePaste
+                          square
+                          maxEdge={200}
+                          value={tool.image}
+                          hint="Ctrl+V או קובץ"
+                          onChange={(image) => patchTool(tool.id, { image: image || undefined })}
+                        />
+                      </Field>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -254,89 +262,132 @@ export function Cms() {
                           </span>
                           <span className="small muted">יכולת {i + 1}</span>
                         </div>
-                        <Field label="שם היכולת">
-                          <input className="field" value={c.title} onChange={(e) => patchCap(c.id, { title: e.target.value })} />
-                        </Field>
-                        <Field label="מה בודקים כאן">
-                          <textarea className="field" value={c.description} onChange={(e) => patchCap(c.id, { description: e.target.value })} />
-                        </Field>
-                        <Field label="תמונה 1×1 — עיגול ליד היכולת, צורה רכה בשיעור">
-                          <ImagePaste
-                            square
-                            maxEdge={200}
-                            value={c.image}
-                            hint="לחצי בתיבה ואז Ctrl+V, או גררי. PNG נשאר שקוף."
-                            onChange={(image) => patchCap(c.id, { image: image || undefined })}
-                          />
-                        </Field>
+                        <div className="cms-split">
+                          <div>
+                            <Field label="שם היכולת">
+                              <input className="field" value={c.title} onChange={(e) => patchCap(c.id, { title: e.target.value })} />
+                            </Field>
+                            <Field label="מה בודקים כאן">
+                              <textarea className="field" value={c.description} onChange={(e) => patchCap(c.id, { description: e.target.value })} />
+                            </Field>
+                          </div>
+                          <div className="cms-side-image">
+                            <Field label="תמונה 1×1">
+                              <ImagePaste
+                                square
+                                maxEdge={200}
+                                value={c.image}
+                                hint="Ctrl+V או קובץ"
+                                onChange={(image) => patchCap(c.id, { image: image || undefined })}
+                              />
+                            </Field>
+                          </div>
+                        </div>
                         <button className="small" onClick={() => setData((d) => ({ ...d, capabilities: d.capabilities.filter((x) => x.id !== c.id) }))}>מחיקת יכולת</button>
                       </div>
                     ))}
                 </>
               )}
 
-              {node.tab === "lessons" && data.lessons.filter((l) => data.capabilities.some((c) => c.id === l.capabilityId && c.toolId === tool.id)).map((l) => (
-                <div key={l.id} className="clay cms-editor">
-                  <Field label="שייך ליכולת">
-                    <select className="field" value={l.capabilityId} onChange={(e) => patchLesson(l.id, { capabilityId: e.target.value })}>
-                      {data.capabilities.filter((c) => c.toolId === tool.id).slice().sort((a, b) => a.order - b.order).map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
-                    </select>
-                  </Field>
-                  <Field label="כותרת השיעור">
-                    <input className="field" value={l.title} onChange={(e) => patchLesson(l.id, { title: e.target.value })} />
-                  </Field>
-                  <div className="cms-field">
-                    <span>תוכן</span>
-                    <RichTextEditor lessonId={l.id} value={l.body} onChange={(body) => patchLesson(l.id, { body })} />
-                  </div>
-                  <Field label="קישור סרטון (יוטיוב או embed)">
-                    <input
-                      className="field"
-                      dir="ltr"
-                      value={l.videoUrl ?? ""}
-                      onChange={(e) => patchLesson(l.id, { videoUrl: toEmbedUrl(e.target.value) })}
-                    />
-                  </Field>
-                  <Field label="פרקים מהתיאור (שורה: 0:00 כותרת)">
-                    <textarea
-                      className="field tall"
-                      placeholder={"00:00 פתיחה\n01:20 השלב הבא"}
-                      value={formatChapterText(l.chapters ?? [])}
-                      onChange={(e) => patchLesson(l.id, { chapters: parseChapterText(e.target.value) })}
-                    />
-                  </Field>
-                  {l.quiz.map((quiz, qi) => (
-                    <div key={quiz.id}>
-                      <Field label={`שאלת תרגול ${qi + 1}`}>
-                        <input className="field" value={quiz.prompt} onChange={(e) => patchQuiz(l.id, qi, { prompt: e.target.value })} />
-                      </Field>
-                      {quiz.options.map((opt, oi) => (
-                        <Field key={oi} label={oi === quiz.correctIndex ? `תשובה ${oi + 1} (נכונה)` : `תשובה ${oi + 1}`}>
-                          <div className="row">
-                            <input className="field grow" value={opt} onChange={(e) => {
-                              const options = [...quiz.options];
-                              options[oi] = e.target.value;
-                              patchQuiz(l.id, qi, { options });
-                            }} />
-                            {oi !== quiz.correctIndex && (
-                              <button className="small" onClick={() => patchQuiz(l.id, qi, { correctIndex: oi })}>זו הנכונה</button>
-                            )}
-                          </div>
+              {node.tab === "lessons" && data.lessons.filter((l) => data.capabilities.some((c) => c.id === l.capabilityId && c.toolId === tool.id)).map((l) => {
+                const cap = data.capabilities.find((c) => c.id === l.capabilityId);
+                const open = openLesson === l.id;
+                const quizOpen = Boolean(openQuiz[l.id]);
+                return (
+                  <div key={l.id} className={`clay cms-editor ${open ? "" : "cms-folded"}`}>
+                    <button type="button" className="cms-fold-head" onClick={() => setOpenLesson(open ? null : l.id)}>
+                      <span>
+                        <strong>{l.title || "שיעור בלי כותרת"}</strong>
+                        <span className="small muted"> · {cap?.title ?? "בלי יכולת"} · {l.quiz.length} שאלות</span>
+                      </span>
+                      <ChevronDown size={18} className={open ? "chev open" : "chev"} />
+                    </button>
+                    {open && (
+                      <div className="cms-fold-body">
+                        <Field label="שייך ליכולת">
+                          <select className="field" value={l.capabilityId} onChange={(e) => patchLesson(l.id, { capabilityId: e.target.value })}>
+                            {data.capabilities.filter((c) => c.toolId === tool.id).slice().sort((a, b) => a.order - b.order).map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+                          </select>
                         </Field>
-                      ))}
-                    </div>
-                  ))}
-                  <div className="row">
-                    <button className="pill btn-yellow small" onClick={() => addQuiz(l.id)}><Plus size={14} /> שאלת תרגול</button>
-                    {l.quiz.length > 1 && (
-                      <button className="small" onClick={() => setData((d) => ({
-                        ...d,
-                        lessons: d.lessons.map((x) => x.id !== l.id ? x : { ...x, quiz: x.quiz.slice(0, -1) }),
-                      }))}>הסרת השאלה האחרונה</button>
+                        <Field label="כותרת השיעור">
+                          <input className="field" value={l.title} onChange={(e) => patchLesson(l.id, { title: e.target.value })} />
+                        </Field>
+                        <div className="cms-field">
+                          <span>תוכן</span>
+                          <RichTextEditor lessonId={l.id} value={l.body} onChange={(body) => patchLesson(l.id, { body })} />
+                        </div>
+                        <Field label="קישור סרטון (יוטיוב או embed)">
+                          <input
+                            className="field"
+                            dir="ltr"
+                            value={l.videoUrl ?? ""}
+                            onChange={(e) => patchLesson(l.id, { videoUrl: toEmbedUrl(e.target.value) })}
+                          />
+                        </Field>
+                        <Field label="פרקים (שורה: 0:00 כותרת)">
+                          <textarea
+                            className="field cms-chapters"
+                            placeholder={"00:00 פתיחה\n01:20 השלב הבא"}
+                            value={formatChapterText(l.chapters ?? [])}
+                            onChange={(e) => patchLesson(l.id, { chapters: parseChapterText(e.target.value) })}
+                          />
+                        </Field>
+                        <div className="cms-quiz-box">
+                          <button type="button" className="cms-fold-head slim" onClick={() => setOpenQuiz((q) => ({ ...q, [l.id]: !q[l.id] }))}>
+                            <span>שאלות תרגול · {l.quiz.length}</span>
+                            <ChevronDown size={16} className={quizOpen ? "chev open" : "chev"} />
+                          </button>
+                          {quizOpen && (
+                            <div className="cms-quiz-list">
+                              {l.quiz.map((quiz, qi) => (
+                                <div key={quiz.id} className="cms-q">
+                                  <label className="cms-q-prompt">
+                                    <span>שאלה {qi + 1}</span>
+                                    <input className="field slim" value={quiz.prompt} onChange={(e) => patchQuiz(l.id, qi, { prompt: e.target.value })} />
+                                  </label>
+                                  {quiz.options.map((opt, oi) => {
+                                    const correct = oi === quiz.correctIndex;
+                                    return (
+                                      <div key={oi} className={`cms-ans ${correct ? "correct" : ""}`}>
+                                        <button
+                                          type="button"
+                                          className={`cms-ans-mark ${correct ? "on" : ""}`}
+                                          onClick={() => patchQuiz(l.id, qi, { correctIndex: oi })}
+                                          title="סמני כתשובה הנכונה"
+                                        >
+                                          {correct ? "נכונה" : oi + 1}
+                                        </button>
+                                        <input
+                                          className="field slim"
+                                          value={opt}
+                                          onChange={(e) => {
+                                            const options = [...quiz.options];
+                                            options[oi] = e.target.value;
+                                            patchQuiz(l.id, qi, { options });
+                                          }}
+                                        />
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ))}
+                              <div className="row">
+                                <button className="pill btn-yellow small" onClick={() => addQuiz(l.id)}><Plus size={14} /> שאלה</button>
+                                {l.quiz.length > 1 && (
+                                  <button className="small" onClick={() => setData((d) => ({
+                                    ...d,
+                                    lessons: d.lessons.map((x) => x.id !== l.id ? x : { ...x, quiz: x.quiz.slice(0, -1) }),
+                                  }))}>הסרת האחרונה</button>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -508,10 +559,11 @@ export function Cms() {
   }
   function addLesson(toolId: string) {
     const cap = data.capabilities.find((c) => c.toolId === toolId);
+    const id = newId("lesson");
     setData((d) => ({
       ...d,
       lessons: [...d.lessons, {
-        id: newId("lesson"),
+        id,
         capabilityId: cap?.id ?? "",
         title: "שיעור חדש",
         body: "",
@@ -519,6 +571,8 @@ export function Cms() {
         autoCompleteOnQuiz: true,
       }],
     }));
+    setOpenLesson(id);
+    setOpenQuiz((q) => ({ ...q, [id]: true }));
   }
   function addQuiz(lessonId: string) {
     setData((d) => ({

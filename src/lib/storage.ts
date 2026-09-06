@@ -1,5 +1,5 @@
 import { createSeed } from "../data/seed";
-import type { AppData, Session } from "./types";
+import type { AppData, Lesson, Session } from "./types";
 
 const DATA_KEY = "nivheret-data-v1";
 const SESSION_KEY = "nivheret-session-v1";
@@ -69,38 +69,6 @@ export function sanitizeCapabilityDescription(description: string): string {
   return tidyDescription(next);
 }
 
-const DROPPED_LESSON_IDS = new Set([
-  "lesson-class-open",
-  "lesson-class-invite",
-  "lesson-class-year",
-  "lesson-class-topics",
-  "lesson-class-assign",
-  "lesson-class-feedback",
-  "lesson-class-share",
-  "lesson-class-materials",
-  "lesson-class-progress",
-  "lesson-class-quiz",
-  "lesson-gem-companion",
-  "lesson-gem-skeptic",
-  "lesson-gem-images",
-  "lesson-nb-sources",
-  "lesson-nb-slides",
-  "lesson-nb-assess",
-  "lesson-canvas-game",
-  "lesson-canvas-lomda",
-  "lesson-gemini-start",
-  "lesson-gemini-notebook",
-  "lesson-gemini-work",
-  "lesson-gemini-async",
-  "lesson-gemini-vids",
-  "lesson-forms-ai",
-  "lesson-forms-export",
-  "lesson-drive-folders",
-  "lesson-drive-share",
-  "lesson-meet-share",
-  "lesson-meet-beyond",
-]);
-
 export function dropUnwantedContent<T extends Pick<AppData, "capabilities" | "lessons">>(data: T): T {
   const capabilities = (data.capabilities ?? [])
     .filter((c) => !isDroppedCapability(c.id, c.title))
@@ -109,10 +77,28 @@ export function dropUnwantedContent<T extends Pick<AppData, "capabilities" | "le
       return description === c.description ? c : { ...c, description };
     });
   const keep = new Set(capabilities.map((c) => c.id));
-  const lessons = (data.lessons ?? []).filter(
-    (l) => keep.has(l.capabilityId) && !DROPPED_CAP_IDS.has(l.capabilityId) && !DROPPED_LESSON_IDS.has(l.id),
-  );
+  const lessons = (data.lessons ?? []).filter((l) => keep.has(l.capabilityId));
   return { ...data, capabilities, lessons };
+}
+
+/** שיעור מקומי גובר על אותו מזהה בענן — כדי לא למחוק עריכה. */
+export function unionLessons(local: Lesson[] = [], remote: Lesson[] = []): Lesson[] {
+  const map = new Map<string, Lesson>();
+  for (const lesson of remote) map.set(lesson.id, lesson);
+  for (const lesson of local) map.set(lesson.id, lesson);
+  return [...map.values()];
+}
+
+/** מוסיפים טיוטה רק ליכולת שעדיין אין לה שיעור, בלי לדרוס קיים. */
+export function fillMissingLessons(existing: Lesson[], drafts: Lesson[]): Lesson[] {
+  const haveCap = new Set(existing.map((l) => l.capabilityId));
+  const haveId = new Set(existing.map((l) => l.id));
+  return [...existing, ...drafts.filter((d) => !haveId.has(d.id) && !haveCap.has(d.capabilityId))];
+}
+
+export function normalizeContent<T extends Pick<AppData, "capabilities" | "lessons">>(data: T): T {
+  const cleaned = dropUnwantedContent(data);
+  return { ...cleaned, lessons: fillMissingLessons(cleaned.lessons, createSeed().lessons) };
 }
 
 function mergeSeed(saved: AppData | null): AppData {
@@ -126,7 +112,7 @@ function mergeSeed(saved: AppData | null): AppData {
     periods: saved.periods?.length ? saved.periods : seed.periods,
     tools: saved.tools?.length ? saved.tools : seed.tools,
     capabilities: saved.capabilities?.length ? saved.capabilities : seed.capabilities,
-    lessons: saved.lessons?.length ? saved.lessons : seed.lessons,
+    lessons: fillMissingLessons(saved.lessons ?? [], seed.lessons),
     responses: saved.responses ?? [],
     reactions: saved.reactions ?? [],
     meetings: saved.meetings ?? seed.meetings,

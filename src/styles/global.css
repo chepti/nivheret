@@ -452,12 +452,69 @@ p { margin: 0 0 10px; color: var(--muted); line-height: 1.55; }
 .cms-field { display: block; margin-bottom: 12px; }
 .cms-field > span { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 6px; padding-inline-start: 4px; }
 .field.tall { min-height: 110px; }
+.cms-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 200px;
+  gap: 16px;
+  align-items: start;
+}
+.cms-side-image .paste-box { padding: 10px; }
+.cms-side-image .paste-preview { margin-top: 8px; flex-direction: column; align-items: flex-start; }
+.cms-folded { padding: 8px 12px; }
+.cms-fold-head {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  text-align: right;
+  background: none;
+  box-shadow: none;
+  padding: 4px 0;
+  color: var(--ink);
+}
+.cms-fold-head.slim { font-size: 0.9rem; }
+.cms-fold-head .chev { transition: transform 0.15s ease; flex-shrink: 0; }
+.cms-fold-head .chev.open { transform: rotate(180deg); }
+.cms-fold-body { margin-top: 10px; }
+.field.cms-chapters { min-height: 72px; font-size: 0.9rem; }
+.cms-quiz-box {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 16px;
+  background: #fffaf0;
+}
+.cms-quiz-list { display: grid; gap: 10px; margin-top: 8px; }
+.cms-q { display: grid; gap: 6px; }
+.cms-q-prompt { display: grid; gap: 4px; }
+.cms-q-prompt > span { font-size: 0.75rem; color: var(--muted); }
+.cms-ans {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+.cms-ans-mark {
+  height: 34px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.cms-ans-mark.on,
+.cms-ans.correct .cms-ans-mark {
+  background: #d8f5d2;
+  color: #1f6b2e;
+  font-weight: 700;
+}
 .cms-tabs { display: flex; gap: 8px; overflow: auto; padding-bottom: 8px; }
 .cms-tabs button { white-space: nowrap; padding: 8px 14px; border-radius: 999px; background: #fff; box-shadow: var(--shadow-sm); }
 .cms-tabs button.on { background: #ffe56a; }
 @media (max-width: 860px) {
   .cms-layout { grid-template-columns: 1fr; }
   .cms-tree { position: relative; top: 0; }
+  .cms-split { grid-template-columns: 1fr; }
 }
 
 .compact-stack { display: grid; gap: 8px; }

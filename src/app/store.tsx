@@ -10,7 +10,7 @@ import {
 import { earnedBadgeIds, normalizeBadge } from "../lib/badges";
 import { completeGoogleRedirect, firebaseEnabled, signInWithGoogle, signOutGoogle } from "../lib/firebase";
 import { emptyResponse } from "../lib/status";
-import { dropUnwantedContent, loadData, loadSession, saveData, saveSession } from "../lib/storage";
+import { dropUnwantedContent, loadData, loadSession, normalizeContent, saveData, saveSession, unionLessons } from "../lib/storage";
 import {
   deleteTeacher,
   pullRemote,
@@ -99,7 +99,7 @@ type Store = {
 const Ctx = createContext<Store | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [data, setDataStateRaw] = useState<AppData>(() => dropUnwantedContent(loadData()));
+  const [data, setDataStateRaw] = useState<AppData>(() => normalizeContent(loadData()));
   const setDataState = (updater: AppData | ((prev: AppData) => AppData)) => {
     setDataStateRaw((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater;
@@ -139,11 +139,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             newerStamp(localAt, remoteAt) ||
             (adminHere && !remoteAt && contentFingerprint(local) !== contentFingerprint(remote));
           const recovered = keepLocalContent
-            ? dropUnwantedContent({ ...local, settings: { ...local.settings, contentUpdatedAt: new Date().toISOString() } })
+            ? normalizeContent({ ...local, settings: { ...local.settings, contentUpdatedAt: new Date().toISOString() } })
             : null;
-          const remoteClean = dropUnwantedContent({
+          const mergedLessons = unionLessons(local.lessons ?? [], remote.lessons ?? []);
+          const remoteClean = normalizeContent({
             capabilities: remote.capabilities ?? local.capabilities,
-            lessons: remote.lessons ?? local.lessons,
+            lessons: mergedLessons,
           });
           const stripped =
             JSON.stringify(remote.capabilities ?? []) !== JSON.stringify(remoteClean.capabilities) ||
@@ -202,6 +203,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 ? { responses: mergeResponses(prev.responses, part.responses) }
                 : {}),
             };
+            if (incoming.lessons) {
+              next.lessons = unionLessons(prev.lessons, incoming.lessons);
+            }
             return incoming.capabilities || incoming.lessons ? dropUnwantedContent(next) : next;
           });
         });
