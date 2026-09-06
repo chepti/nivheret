@@ -9,6 +9,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { getFirebase } from "./firebase";
+import { unionLessons } from "./storage";
 import type {
   AppData,
   CapabilityResponse,
@@ -77,7 +78,12 @@ export async function seedIfEmpty(data: AppData): Promise<boolean> {
 export async function pushContent(data: AppData): Promise<void> {
   const fb = getFirebase();
   if (!fb) return;
-  await setDoc(doc(fb.db, "content", "app"), contentFrom(data));
+  const snap = await getDoc(doc(fb.db, "content", "app"));
+  const remoteLessons = snap.exists() ? ((snap.data() as ContentDoc).lessons ?? []) : [];
+  await setDoc(doc(fb.db, "content", "app"), {
+    ...contentFrom(data),
+    lessons: unionLessons(data.lessons, remoteLessons),
+  });
 }
 
 export async function pushTeacher(teacher: Teacher): Promise<void> {

@@ -139,7 +139,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             newerStamp(localAt, remoteAt) ||
             (adminHere && !remoteAt && contentFingerprint(local) !== contentFingerprint(remote));
           const recovered = keepLocalContent
-            ? normalizeContent({ ...local, settings: { ...local.settings, contentUpdatedAt: new Date().toISOString() } })
+            ? normalizeContent({
+                ...local,
+                lessons: unionLessons(local.lessons ?? [], remote.lessons ?? []),
+                settings: { ...local.settings, contentUpdatedAt: new Date().toISOString() },
+              })
             : null;
           const mergedLessons = unionLessons(local.lessons ?? [], remote.lessons ?? []);
           const remoteClean = normalizeContent({
