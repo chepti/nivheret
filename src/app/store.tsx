@@ -11,7 +11,7 @@ import { earnedBadgeIds, normalizeBadge } from "../lib/badges";
 import { completeGoogleRedirect, firebaseEnabled, signInWithGoogle, signOutGoogle } from "../lib/firebase";
 import { emptyResponse } from "../lib/status";
 import { createSeed } from "../data/seed";
-import { loadData, loadSession, saveData, saveSession } from "../lib/storage";
+import { loadData, loadSession, mergeLessons, saveData, saveSession, unionById } from "../lib/storage";
 import {
   deleteTeacher,
   pullRemote,
@@ -51,13 +51,6 @@ function isContentPart(part: Partial<AppData>): boolean {
 
 function newerStamp(a?: string, b?: string): boolean {
   return Boolean(a && (!b || a > b));
-}
-
-function unionById<T extends { id: string }>(preferred: T[] | undefined, extra: T[]): T[] {
-  const map = new Map<string, T>();
-  for (const item of extra) map.set(item.id, item);
-  for (const item of preferred ?? []) map.set(item.id, item);
-  return [...map.values()];
 }
 
 function mergeResponses(local: CapabilityResponse[], remote: CapabilityResponse[]): CapabilityResponse[] {
@@ -149,7 +142,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             const sourceLessons = keepLocalContent ? prev.lessons : remote.lessons ?? prev.lessons;
             const sourceTools = keepLocalContent ? prev.tools : remote.tools ?? prev.tools;
             const capabilities = unionById(sourceCaps, seed.capabilities);
-            const lessons = unionById(sourceLessons, seed.lessons);
+            const lessons = mergeLessons(sourceLessons, seed.lessons);
             const tools = unionById(sourceTools, seed.tools);
             const merged = {
               ...(recovered ?? prev),
@@ -164,9 +157,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               lessons,
               tools,
             };
+            const remoteLessonMap = new Map((remote.lessons ?? []).map((l) => [l.id, l]));
+            const lessonsUpgraded = seed.lessons.some((s) => {
+              const cur = remoteLessonMap.get(s.id);
+              if (!cur) return true;
+              if (cur.videoUrl?.includes("IhoKLbmpr4A")) return true;
+              return !cur.chapters?.length && !!s.chapters?.length && cur.videoUrl === s.videoUrl;
+            });
             if (
               !recovered &&
-              (lessons.length > (remote.lessons?.length ?? 0) || capabilities.length > (remote.capabilities?.length ?? 0))
+              (lessonsUpgraded || capabilities.length > (remote.capabilities?.length ?? 0))
             ) {
               skipRemoteContent.current = true;
               void pushContent({ ...merged, settings: { ...merged.settings, contentUpdatedAt: new Date().toISOString() } })
@@ -201,7 +201,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           setDataState((prev) => {
             const seed = createSeed();
             const incoming = skipRemoteContent.current && isContentPart(part) ? {} : part;
-            const lessons = incoming.lessons ? unionById(incoming.lessons, seed.lessons) : undefined;
+            const lessons = incoming.lessons ? mergeLessons(incoming.lessons, seed.lessons) : undefined;
             const capabilities = incoming.capabilities ? unionById(incoming.capabilities, seed.capabilities) : undefined;
             const tools = incoming.tools ? unionById(incoming.tools, seed.tools) : undefined;
             return {

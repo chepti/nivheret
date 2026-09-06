@@ -1,14 +1,40 @@
 import { createSeed } from "../data/seed";
-import type { AppData, Session } from "./types";
+import type { AppData, Lesson, Session } from "./types";
 
 const DATA_KEY = "nivheret-data-v1";
 const SESSION_KEY = "nivheret-session-v1";
 
-function unionById<T extends { id: string }>(preferred: T[] | undefined, extra: T[]): T[] {
+export function unionById<T extends { id: string }>(preferred: T[] | undefined, extra: T[]): T[] {
   const map = new Map<string, T>();
   for (const item of extra) map.set(item.id, item);
   for (const item of preferred ?? []) map.set(item.id, item);
   return [...map.values()];
+}
+
+export function mergeLessons(preferred: Lesson[] | undefined, seed: Lesson[]): Lesson[] {
+  const remote = new Map((preferred ?? []).map((l) => [l.id, l]));
+  const out = new Map<string, Lesson>();
+  for (const extra of seed) {
+    const cur = remote.get(extra.id);
+    if (!cur) {
+      out.set(extra.id, extra);
+      continue;
+    }
+    const staleVideo = !cur.videoUrl || cur.videoUrl.includes("IhoKLbmpr4A");
+    const sameVideo = staleVideo || cur.videoUrl === extra.videoUrl;
+    const plainBody = !/<[a-z][\s\S]*>/i.test(cur.body);
+    out.set(extra.id, {
+      ...extra,
+      ...cur,
+      videoUrl: staleVideo ? extra.videoUrl : cur.videoUrl,
+      chapters: cur.chapters?.length ? cur.chapters : sameVideo ? extra.chapters : cur.chapters,
+      body: plainBody && extra.body ? extra.body : cur.body,
+      title: cur.title === "שיעור חדש" ? extra.title : cur.title,
+    });
+    remote.delete(extra.id);
+  }
+  for (const leftover of remote.values()) out.set(leftover.id, leftover);
+  return [...out.values()];
 }
 
 function mergeSeed(saved: AppData | null): AppData {
@@ -22,7 +48,7 @@ function mergeSeed(saved: AppData | null): AppData {
     periods: saved.periods?.length ? saved.periods : seed.periods,
     tools: unionById(saved.tools, seed.tools),
     capabilities: unionById(saved.capabilities, seed.capabilities),
-    lessons: unionById(saved.lessons, seed.lessons),
+    lessons: mergeLessons(saved.lessons, seed.lessons),
     responses: saved.responses ?? [],
     reactions: saved.reactions ?? [],
     meetings: saved.meetings ?? seed.meetings,
