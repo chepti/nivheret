@@ -93,6 +93,7 @@ export type Meeting = {
   datetime: string;
   location: string;
   description: string;
+  joinUrl?: string;
 };
 
 export type MeetingRsvp = {

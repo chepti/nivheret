@@ -460,6 +460,15 @@ p { margin: 0 0 10px; color: var(--muted); line-height: 1.55; }
   .cms-tree { position: relative; top: 0; }
 }
 
+.name-list { margin-top: 10px; }
+.name-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f3ead6;
+  text-align: right;
+}
 .muted { color: var(--muted); }
 .small { font-size: 0.82rem; }
 .center { text-align: center; }

@@ -33,6 +33,9 @@ export function Meetings() {
             <div className="small muted">{m.topic}</div>
             <h2>{m.title}</h2>
             <p>{formatHebDate(m.datetime)} · {m.location}</p>
+            {m.joinUrl && (
+              <p><a href={m.joinUrl} dir="ltr" target="_blank" rel="noreferrer">קישור כניסה</a></p>
+            )}
             <p style={{ color: "var(--ink)" }}>{m.description}</p>
             <div className="row">
               <button

@@ -328,6 +328,9 @@ export function Cms() {
               <Field label="תחום"><input className="field" value={m.topic} onChange={(e) => patchMeet(m.id, { topic: e.target.value })} /></Field>
               <Field label="מועד"><input className="field" type="datetime-local" value={m.datetime.slice(0, 16)} onChange={(e) => patchMeet(m.id, { datetime: e.target.value })} /></Field>
               <Field label="מקום"><input className="field" value={m.location} onChange={(e) => patchMeet(m.id, { location: e.target.value })} /></Field>
+              <Field label="קישור כניסה (Meet / זום / אתר)">
+                <input className="field" dir="ltr" placeholder="https://" value={m.joinUrl ?? ""} onChange={(e) => patchMeet(m.id, { joinUrl: e.target.value })} />
+              </Field>
               <Field label="תיאור"><textarea className="field" value={m.description} onChange={(e) => patchMeet(m.id, { description: e.target.value })} /></Field>
             </div>
           ))}
