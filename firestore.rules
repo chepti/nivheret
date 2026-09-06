@@ -10,23 +10,43 @@ service cloud.firestore {
         request.auth.token.email.lower() == 'chepti@gmail.com'
       );
     }
-    function ownEmail(email) {
-      return signedIn() && request.auth.token.email.lower() == email.lower();
+    function bootstrapping() {
+      return !exists(/databases/$(database)/documents/content/app);
+    }
+    function knownTeacher(email) {
+      return exists(/databases/$(database)/documents/teachers/$(email));
     }
 
     match /content/{doc} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() || bootstrapping();
     }
+
     match /teachers/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create: if isAdmin() || bootstrapping() ||
+        request.resource.data.email.lower() == id.lower();
+      allow update, delete: if isAdmin() || bootstrapping();
     }
+
     match /responses/{id} {
-      allow read: if signedIn();
-      allow create, update: if signedIn() && request.resource.data.teacherId == request.auth.token.email;
+      allow read: if true;
+      allow create, update: if knownTeacher(request.resource.data.teacherId);
       allow delete: if isAdmin();
     }
+
+    match /rsvps/{id} {
+      allow read: if true;
+      allow create, update: if knownTeacher(request.resource.data.teacherId);
+      allow delete: if isAdmin();
+    }
+
+    match /reactions/{id} {
+      allow read: if true;
+      allow create, update: if knownTeacher(request.resource.data.teacherId);
+      allow delete: if isAdmin();
+    }
+
     match /aggregates/{id} {
       allow read: if true;
       allow write: if false;

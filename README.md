@@ -22,14 +22,11 @@ npm run dev
 
 ## Firebase
 
-העתיקי `.env.example` ל־`.env` ומלאי את המפתחות. בלי מפתחות האפליקציה עובדת על `localStorage` באותו דפדפן.
+פרויקט: `nivheret-3d7ad`. קובץ `.env` מקומי (לא בגיט) עם מפתחות `VITE_FIREBASE_*`.
 
-אחרי יצירת הפרויקט:
+הסימונים, רשימת המורות וה־CMS מסונכרנים ל־Firestore. בלי `.env` האפליקציה נופלת חזרה ל־`localStorage`.
 
-- Authentication → Google
-- Firestore + הכללים מ־`firestore.rules`
-- Hosting (או העלאת `dist/` ל־`tzviama.com/learn/`)
-- Functions (אופציונלי) מתיקיית `functions/`
+כללי אבטחה: `firestore.rules` ו־`storage.rules` (כבר פרוסים).
 
 ## תוכן התחלתי
 

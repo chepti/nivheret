@@ -3,6 +3,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -10,6 +11,16 @@ import { earnedBadgeIds } from "../lib/badges";
 import { firebaseEnabled, signInWithGoogle, signOutGoogle } from "../lib/firebase";
 import { emptyResponse } from "../lib/status";
 import { loadData, loadSession, saveData, saveSession } from "../lib/storage";
+import {
+  pullRemote,
+  pushContent,
+  pushReaction,
+  pushResponse,
+  pushRsvp,
+  pushTeacher,
+  seedIfEmpty,
+  watchShared,
+} from "../lib/sync";
 import type {
   AppData,
   CapabilityResponse,
@@ -26,6 +37,7 @@ type Store = {
   teacher: Teacher | undefined;
   isAdmin: boolean;
   isAuthedBeyondForm: boolean;
+  syncReady: boolean;
   setData: (updater: AppData | ((prev: AppData) => AppData)) => void;
   enterForm: (institutionId: string, teacher: Teacher) => void;
   linkGoogle: () => Promise<string | null>;
@@ -42,13 +54,62 @@ const Ctx = createContext<Store | null>(null);
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [data, setDataState] = useState<AppData>(() => loadData());
   const [session, setSessionState] = useState<Session | null>(() => loadSession());
+  const [syncReady, setSyncReady] = useState(!firebaseEnabled());
+  const skipRemoteContent = useRef(false);
 
   useEffect(() => {
     saveData(data);
   }, [data]);
 
+  useEffect(() => {
+    if (!firebaseEnabled()) return;
+    let stop = () => {};
+    void (async () => {
+      try {
+        const local = loadData();
+        await seedIfEmpty(local);
+        const remote = await pullRemote();
+        if (remote) {
+          setDataState((prev) => ({
+            ...prev,
+            ...remote,
+            teachers: remote.teachers?.length ? remote.teachers : prev.teachers,
+            responses: remote.responses ?? prev.responses,
+            rsvps: remote.rsvps ?? prev.rsvps,
+            reactions: remote.reactions ?? prev.reactions,
+          }));
+        }
+        stop = watchShared((part) => {
+          if (skipRemoteContent.current) return;
+          setDataState((prev) => ({ ...prev, ...part }));
+        });
+      } catch (err) {
+        console.error("Firebase sync", err);
+      } finally {
+        setSyncReady(true);
+      }
+    })();
+    return () => stop();
+  }, []);
+
   const setData: Store["setData"] = (updater) => {
-    setDataState((prev) => (typeof updater === "function" ? updater(prev) : updater));
+    setDataState((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      if (firebaseEnabled()) {
+        skipRemoteContent.current = true;
+        void pushContent(next).finally(() => {
+          window.setTimeout(() => {
+            skipRemoteContent.current = false;
+          }, 400);
+        });
+        const changed = next.teachers.filter((t) => {
+          const old = prev.teachers.find((x) => x.id === t.id);
+          return !old || JSON.stringify(old) !== JSON.stringify(t);
+        });
+        for (const t of changed) void pushTeacher(t);
+      }
+      return next;
+    });
   };
 
   const teacher = data.teachers.find((t) => t.id === session?.teacherId);
@@ -104,7 +165,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const upsertResponse: Store["upsertResponse"] = (patch) => {
     if (!session) return;
     const teacherId = session.teacherId;
-    setData((prev) => {
+    setDataState((prev) => {
       const i = prev.responses.findIndex(
         (r) => r.teacherId === teacherId && r.capabilityId === patch.capabilityId,
       );
@@ -113,6 +174,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const responses = [...prev.responses];
       if (i >= 0) responses[i] = next;
       else responses.push(next);
+      void pushResponse(next);
       return { ...prev, responses };
     });
   };
@@ -128,7 +190,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const upsertRsvp: Store["upsertRsvp"] = (patch) => {
     if (!session) return;
     const teacherId = session.teacherId;
-    setData((prev) => {
+    setDataState((prev) => {
       const i = prev.rsvps.findIndex((r) => r.teacherId === teacherId && r.meetingId === patch.meetingId);
       const base: MeetingRsvp =
         i >= 0 ? prev.rsvps[i] : { teacherId, meetingId: patch.meetingId, planningToAttend: false, attended: false };
@@ -136,6 +198,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const rsvps = [...prev.rsvps];
       if (i >= 0) rsvps[i] = next;
       else rsvps.push(next);
+      void pushRsvp(next);
       return { ...prev, rsvps };
     });
   };
@@ -143,7 +206,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const upsertReaction: Store["upsertReaction"] = (patch) => {
     if (!session) return;
     const teacherId = session.teacherId;
-    setData((prev) => {
+    setDataState((prev) => {
       const i = prev.reactions.findIndex(
         (r) => r.teacherId === teacherId && r.capabilityId === patch.capabilityId,
       );
@@ -155,6 +218,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const reactions = [...prev.reactions];
       if (i >= 0) reactions[i] = next;
       else reactions.push(next);
+      void pushReaction(next);
       return { ...prev, reactions };
     });
   };
@@ -171,6 +235,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     teacher,
     isAdmin,
     isAuthedBeyondForm,
+    syncReady,
     setData,
     enterForm,
     linkGoogle,

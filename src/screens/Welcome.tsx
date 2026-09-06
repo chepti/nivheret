@@ -4,7 +4,7 @@ import { navigate } from "../app/router";
 import { useStore } from "../app/store";
 
 export function Welcome() {
-  const { data } = useStore();
+  const { data, firebaseOn, syncReady } = useStore();
   const [symbol, setSymbol] = useState(data.institutions[0]?.symbol ?? "");
   const match = data.institutions.find((i) => i.symbol === symbol.trim());
 
@@ -15,6 +15,13 @@ export function Welcome() {
       </div>
       <h1>נבחרת</h1>
       <p>למידה צוותית · יכולות דיגיטליות · מפגשים</p>
+      <p className="small" style={{ color: firebaseOn ? "var(--mastered)" : "var(--teach)" }}>
+        {firebaseOn
+          ? syncReady
+            ? "מחובר ל־Firebase — הסימונים נשמרים לענן"
+            : "מתחבר ל־Firebase…"
+          : "Firebase לא מחובר — בודקים את קובץ ‎.env"}
+      </p>
       <div className="clay" style={{ padding: 22, marginTop: 22, textAlign: "right" }}>
         <h2>בחירת סמל מוסד</h2>
         <p className="small">בחרי מהרשימה או הקלידי את הסמל.</p>
