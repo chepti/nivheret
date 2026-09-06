@@ -20,7 +20,7 @@ const MAP = {
 export function ItemThumb({
   image,
   size = 50,
-  shape = "circle",
+  shape = "soft",
   alt = "",
 }: {
   image: string;
@@ -40,7 +40,7 @@ export function ClayIcon({
   size = 28,
   bg = "#ffe56a",
   image,
-  shape = "circle",
+  shape = "soft",
 }: {
   name: Tool["icon"];
   size?: number;

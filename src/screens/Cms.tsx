@@ -201,7 +201,7 @@ export function Cms() {
                       square
                       maxEdge={200}
                       value={tool.image}
-                      hint="הדביקי (Ctrl+V) או גררי. נחתך לריבוע ומוקטן אוטומטית."
+                      hint="לחצי בתיבה ואז Ctrl+V, או גררי. PNG נשאר שקוף."
                       onChange={(image) => patchTool(tool.id, { image: image || undefined })}
                     />
                   </Field>
@@ -261,7 +261,7 @@ export function Cms() {
                             square
                             maxEdge={200}
                             value={c.image}
-                            hint="הדביקי (Ctrl+V) או גררי. נחתך לריבוע ומוקטן."
+                            hint="לחצי בתיבה ואז Ctrl+V, או גררי. PNG נשאר שקוף."
                             onChange={(image) => patchCap(c.id, { image: image || undefined })}
                           />
                         </Field>

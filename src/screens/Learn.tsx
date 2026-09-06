@@ -34,16 +34,16 @@ export function Learn({ route }: { route: Route }) {
     return (
       <GoogleGate>
         <button className="small muted" onClick={() => navigate("learn")}>חזרה ללמידה</button>
-        <div className="row" style={{ alignItems: "flex-start", marginBottom: 8 }}>
+        <div className="lesson-hero">
           {(cap?.image || data.tools.find((t) => t.id === cap?.toolId)?.image) && (
             <ItemThumb
               image={cap?.image || data.tools.find((t) => t.id === cap?.toolId)?.image || ""}
-              size={88}
+              size={132}
               shape="soft"
               alt=""
             />
           )}
-          <div>
+          <div className="tool-head-text">
             <h1>{lesson.title}</h1>
             <p>{cap?.title}</p>
           </div>
@@ -122,25 +122,23 @@ export function Learn({ route }: { route: Route }) {
           .filter((l) => capOrder.has(l.capabilityId))
           .sort((a, b) => (capOrder.get(a.capabilityId) ?? 0) - (capOrder.get(b.capabilityId) ?? 0));
         return (
-          <article key={tool.id} className="clay" style={{ padding: 16, marginBottom: 12 }}>
-            <div className="row">
-              <ClayIcon name={tool.icon} bg={tool.color} image={tool.image} />
-              <div>
+          <article key={tool.id} className="clay tool-block">
+            <div className="tool-head">
+              {tool.image ? <ItemThumb image={tool.image} size={120} shape="soft" /> : <ClayIcon name={tool.icon} bg={tool.color} />}
+              <div className="tool-head-text">
                 <h2>{tool.name}</h2>
-                <p className="small" style={{ margin: 0 }}>{lessons.length ? `${lessons.length} שיעורים מוכנים` : "עדיין אין תוכן — מוכן ב־CMS"}</p>
+                <p className="small">{lessons.length ? `${lessons.length} שיעורים מוכנים` : "עדיין אין תוכן — מוכן ב־CMS"}</p>
               </div>
             </div>
             {lessons.map((l) => {
               const r = responseOf(l.capabilityId);
               const lessonCap = caps.find((c) => c.id === l.capabilityId);
               return (
-                <button key={l.id} className="clay cap-card" style={{ width: "100%", textAlign: "right", marginTop: 10 }} onClick={() => navigate("lesson", l.id)}>
-                  <span className="row">
-                    {lessonCap?.image && <ItemThumb image={lessonCap.image} size={40} />}
-                    <span>
-                      <strong>{l.title}</strong>
-                      <div className="small muted">{r.completedLearning ? "הושלם ✓" : r.savedForLater ? "שמור להמשך" : "פתחי שיעור"}</div>
-                    </span>
+                <button key={l.id} className="clay cap-card cap-line" onClick={() => navigate("lesson", l.id)}>
+                  {lessonCap?.image && <ItemThumb image={lessonCap.image} size={52} shape="soft" />}
+                  <span className="cap-line-text">
+                    <strong>{l.title}</strong>
+                    <span className="small muted">{r.completedLearning ? "הושלם ✓" : r.savedForLater ? "שמור להמשך" : "פתחי שיעור"}</span>
                   </span>
                 </button>
               );

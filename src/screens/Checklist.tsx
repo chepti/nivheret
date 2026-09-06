@@ -57,12 +57,12 @@ export function Checklist() {
             {periodTools.map((tool) => {
               const caps = data.capabilities.filter((c) => c.toolId === tool.id).sort((a, b) => a.order - b.order);
               return (
-                <article key={tool.id} className="clay" style={{ padding: 16, marginBottom: 14 }}>
-                  <div className="row" style={{ marginBottom: 10 }}>
-                    <ClayIcon name={tool.icon} bg={tool.color} image={tool.image} />
-                    <div className="grow">
+                <article key={tool.id} className="clay tool-block">
+                  <div className="tool-head">
+                    {tool.image ? <ItemThumb image={tool.image} size={120} shape="soft" /> : <ClayIcon name={tool.icon} bg={tool.color} />}
+                    <div className="tool-head-text">
                       <h2>{tool.name}</h2>
-                      <p className="small" style={{ margin: 0 }}>{tool.subtitle}</p>
+                      <p className="small">{tool.subtitle}</p>
                     </div>
                   </div>
                   {caps.length === 0 ? (
@@ -75,16 +75,13 @@ export function Checklist() {
                       return (
                         <div key={cap.id} className={`cap-card clay ${st} ${open ? "open" : ""}`} style={{ marginBottom: 8, boxShadow: "var(--shadow-sm)" }}>
                           <button
-                            className="row"
-                            style={{ width: "100%", justifyContent: "space-between" }}
+                            className="cap-line"
                             onClick={() => setOpenId(open ? null : cap.id)}
                           >
-                            <span className="row" style={{ alignItems: "flex-start", flex: 1 }}>
-                              {cap.image && <ItemThumb image={cap.image} size={40} />}
-                              <span>
-                                <strong>{cap.title}</strong>
-                                <div className="small muted">{cap.description}</div>
-                              </span>
+                            {cap.image && <ItemThumb image={cap.image} size={52} shape="soft" />}
+                            <span className="cap-line-text">
+                              <strong>{cap.title}</strong>
+                              <span className="small muted">{cap.description}</span>
                             </span>
                           </button>
                           {open && (
