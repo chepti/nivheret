@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { Award, BookOpen, CalendarDays, ChevronLeft, Plus, Settings, Users } from "lucide-react";
+import { Award, BookOpen, CalendarDays, ChevronLeft, Plus, Settings, Trash2, Users } from "lucide-react";
 import { useStore } from "../app/store";
 import { GoogleGate } from "../components/GoogleGate";
 import { ImagePaste } from "../components/ImagePaste";
@@ -26,7 +26,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 }
 
 export function Cms() {
-  const { data, setData, isAdmin, syncReady, cloudSave } = useStore();
+  const { data, setData, isAdmin, session, syncReady, cloudSave } = useStore();
   const [node, setNode] = useState<Node>({ kind: "home" });
   const [q, setQ] = useState("");
   const [openPeriod, setOpenPeriod] = useState<string | null>("elul-tishrei");
@@ -36,8 +36,26 @@ export function Cms() {
 
   const teachers = useMemo(() => {
     const s = q.trim();
-    if (!s) return data.teachers.slice(0, 25);
-    return data.teachers.filter((t) => `${t.firstName} ${t.lastName} ${t.email}`.includes(s)).slice(0, 40);
+    const low = s.toLowerCase();
+    const list = s
+      ? data.teachers.filter((t) => {
+          const full = `${t.firstName} ${t.lastName}`;
+          return (
+            t.firstName.startsWith(s) ||
+            t.lastName.startsWith(s) ||
+            full.startsWith(s) ||
+            full.includes(s) ||
+            t.email.toLowerCase().startsWith(low) ||
+            t.email.toLowerCase().includes(low)
+          );
+        })
+      : data.teachers;
+    return list.slice().sort((a, b) => {
+      const aNew = a.email.startsWith("new-");
+      const bNew = b.email.startsWith("new-");
+      if (aNew !== bNew) return aNew ? -1 : 1;
+      return a.firstName.localeCompare(b.firstName, "he");
+    });
   }, [data.teachers, q]);
 
   if (!isAdmin) {
@@ -236,28 +254,40 @@ export function Cms() {
 
           {node.kind === "teachers" && (
             <div>
-              <input className="field" placeholder="חיפוש מורה" value={q} onChange={(e) => setQ(e.target.value)} />
-              <p className="small">{data.teachers.length} בספר · מציג {teachers.length}</p>
-              {teachers.map((t) => (
-                <div key={t.id} className="clay cms-editor">
-                  <Field label="שם">
-                    <input className="field" value={`${t.firstName} ${t.lastName}`} onChange={(e) => {
-                      const [firstName, ...rest] = e.target.value.split(" ");
-                      patchTeacher(t.id, { firstName, lastName: rest.join(" ") });
-                    }} />
-                  </Field>
-                  <Field label="מייל">
-                    <input className="field" dir="ltr" value={t.email} onChange={(e) => patchTeacher(t.id, { email: e.target.value, id: e.target.value })} />
-                  </Field>
-                  <Field label="תפקיד">
-                    <select className="field" value={t.role} onChange={(e) => patchTeacher(t.id, { role: e.target.value as Teacher["role"] })}>
+              <input className="field" placeholder="חיפוש — אותיות ראשונות של השם או המייל" value={q} onChange={(e) => setQ(e.target.value)} />
+              <p className="small">{q ? `${teachers.length} תוצאות מתוך ${data.teachers.length}` : `${data.teachers.length} מורות בספר`}</p>
+              <div className="clay teacher-list">
+                <div className="teacher-row head">
+                  <span>שם פרטי</span>
+                  <span>משפחה</span>
+                  <span>מייל</span>
+                  <span>תפקיד</span>
+                  <span />
+                </div>
+                {teachers.map((t) => (
+                  <div key={t.id} className="teacher-row">
+                    <input className="field slim" value={t.firstName} onChange={(e) => patchTeacher(t.id, { firstName: e.target.value })} />
+                    <input className="field slim" value={t.lastName} onChange={(e) => patchTeacher(t.id, { lastName: e.target.value })} />
+                    <input className="field slim" dir="ltr" value={t.email} onChange={(e) => patchTeacher(t.id, { email: e.target.value, id: e.target.value })} />
+                    <select className="field slim" value={t.role} onChange={(e) => patchTeacher(t.id, { role: e.target.value as Teacher["role"] })}>
                       <option value="teacher">מורה</option>
                       <option value="leadership">הנהלה</option>
                       <option value="admin">אדמין</option>
                     </select>
-                  </Field>
-                </div>
-              ))}
+                    <button
+                      className="teacher-del"
+                      title="הסרת מורה"
+                      onClick={() => removeTeacher(t)}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button className="cms-fab" onClick={addTeacher}>
+                <Plus size={20} />
+                מורה
+              </button>
             </div>
           )}
 
@@ -391,11 +421,20 @@ export function Cms() {
       }],
     }));
   }
+  function removeTeacher(t: Teacher) {
+    if (session?.teacherId === t.id || session?.email.toLowerCase() === t.email.toLowerCase()) {
+      window.alert("אי אפשר להסיר את החשבון שאיתו נכנסת.");
+      return;
+    }
+    if (!window.confirm(`להסיר את ${t.firstName} ${t.lastName} מספר המורות?`)) return;
+    setData((d) => ({ ...d, teachers: d.teachers.filter((x) => x.id !== t.id) }));
+  }
   function addTeacher() {
     const email = `new-${Date.now()}@tzviama.com`;
+    setQ("");
     setData((d) => ({
       ...d,
-      teachers: [...d.teachers, { id: email, institutionId: "tzviama", firstName: "מורה", lastName: "חדשה", email, role: "teacher" }],
+      teachers: [{ id: email, institutionId: "tzviama", firstName: "מורה", lastName: "חדשה", email, role: "teacher" }, ...d.teachers],
     }));
   }
 }

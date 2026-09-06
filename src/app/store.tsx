@@ -12,6 +12,7 @@ import { completeGoogleRedirect, firebaseEnabled, signInWithGoogle, signOutGoogl
 import { emptyResponse } from "../lib/status";
 import { loadData, loadSession, saveData, saveSession } from "../lib/storage";
 import {
+  deleteTeacher,
   pullRemote,
   pushContent,
   pushReaction,
@@ -226,6 +227,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           return !old || JSON.stringify(old) !== JSON.stringify(t);
         });
         for (const t of changed) void pushTeacher(t);
+        const removed = prev.teachers.filter((t) => !next.teachers.some((x) => x.id === t.id));
+        for (const t of removed) void deleteTeacher(t);
       }
       return next;
     });

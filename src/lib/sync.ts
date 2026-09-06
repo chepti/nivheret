@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -80,6 +81,15 @@ export async function pushTeacher(teacher: Teacher): Promise<void> {
   const fb = getFirebase();
   if (!fb) return;
   await setDoc(doc(fb.db, "teachers", teacherDocId(teacher.email)), teacher);
+}
+
+export async function deleteTeacher(teacher: Teacher): Promise<void> {
+  const fb = getFirebase();
+  if (!fb) return;
+  await deleteDoc(doc(fb.db, "teachers", teacherDocId(teacher.email)));
+  if (teacher.id.toLowerCase() !== teacher.email.toLowerCase()) {
+    await deleteDoc(doc(fb.db, "teachers", teacherDocId(teacher.id)));
+  }
 }
 
 export async function pushResponse(row: CapabilityResponse): Promise<void> {
