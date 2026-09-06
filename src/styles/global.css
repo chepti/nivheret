@@ -173,16 +173,27 @@ p { margin: 0 0 10px; color: var(--muted); line-height: 1.55; }
 .teacher-name { text-align: right !important; white-space: nowrap; padding-inline-end: 8px; color: var(--ink); }
 
 .ring-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px; }
-.tool-orbit { position: relative; width: 220px; height: 220px; margin: 12px auto; }
+.tool-orbit, .arc-wrap { position: relative; width: 220px; height: 220px; margin: 12px auto; }
+.arc-svg { width: 100%; height: 100%; display: block; }
+.arc-seg { transition: stroke-dasharray 0.65s ease, stroke-dashoffset 0.65s ease; }
 .orbit-center {
-  position: absolute; inset: 48px; border-radius: 50%;
+  position: absolute; inset: 52px; border-radius: 50%;
   display: grid; place-items: center; text-align: center; padding: 8px;
   background: #fff; box-shadow: var(--shadow);
 }
+.orbit-center strong { font-size: 0.82rem; display: block; margin-top: 4px; }
 .orbit-bubble {
   position: absolute; width: 54px; height: 54px; border-radius: 50%;
   display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 0.95rem;
   box-shadow: var(--shadow-sm); cursor: pointer;
+}
+.arc-legend {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 10px;
+  margin-top: 4px;
+}
+.arc-leg {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.78rem; color: var(--muted); background: none; padding: 2px 0;
 }
 
 .badge-chip {

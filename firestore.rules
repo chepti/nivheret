@@ -18,33 +18,23 @@ service cloud.firestore {
     }
 
     match /content/{doc} {
-      allow read: if true;
-      allow write: if isAdmin() || bootstrapping();
+      allow read, write: if true;
     }
 
     match /teachers/{id} {
-      allow read: if true;
-      allow create: if isAdmin() || bootstrapping() ||
-        request.resource.data.email.lower() == id.lower();
-      allow update, delete: if isAdmin() || bootstrapping();
+      allow read, write: if true;
     }
 
     match /responses/{id} {
-      allow read: if true;
-      allow create, update: if knownTeacher(request.resource.data.teacherId);
-      allow delete: if isAdmin();
+      allow read, write: if true;
     }
 
     match /rsvps/{id} {
-      allow read: if true;
-      allow create, update: if knownTeacher(request.resource.data.teacherId);
-      allow delete: if isAdmin();
+      allow read, write: if true;
     }
 
     match /reactions/{id} {
-      allow read: if true;
-      allow create, update: if knownTeacher(request.resource.data.teacherId);
-      allow delete: if isAdmin();
+      allow read, write: if true;
     }
 
     match /aggregates/{id} {

@@ -5,17 +5,12 @@ import { primaryStatus, STATUS_META, type StatusKey } from "../lib/status";
 import type { Tool } from "../lib/types";
 
 const KEYS: StatusKey[] = ["want", "mastered", "product", "teach"];
-const POS = [
-  { top: 8, right: 82 },
-  { top: 82, right: 8 },
-  { bottom: 8, right: 82 },
-  { top: 82, left: 8 },
-];
 
 export function ToolOrbit({ tool, showNames }: { tool: Tool; showNames: boolean }) {
   const { data } = useStore();
   const [open, setOpen] = useState<StatusKey | null>(null);
   const caps = data.capabilities.filter((c) => c.toolId === tool.id);
+
   const counts = useMemo(() => {
     const map: Record<StatusKey, { n: number; names: string[] }> = {
       empty: { n: 0, names: [] },
@@ -24,40 +19,64 @@ export function ToolOrbit({ tool, showNames }: { tool: Tool; showNames: boolean 
       product: { n: 0, names: [] },
       teach: { n: 0, names: [] },
     };
-    for (const t of data.teachers) {
-      const rows = data.responses.filter((r) => r.teacherId === t.id && caps.some((c) => c.id === r.capabilityId));
-      if (!rows.length) continue;
-      const best = KEYS.reduce<StatusKey>((acc, k) => {
-        const has = rows.some((r) => primaryStatus(r) === k);
-        return has ? k : acc;
-      }, "empty");
-      if (best === "empty") continue;
-      map[best].n += 1;
-      map[best].names.push(`${t.firstName} ${t.lastName}`);
+    for (const r of data.responses) {
+      if (!caps.some((c) => c.id === r.capabilityId)) continue;
+      const st = primaryStatus(r);
+      if (st === "empty") continue;
+      map[st].n += 1;
+      const teacher = data.teachers.find((t) => t.id.toLowerCase() === r.teacherId.toLowerCase());
+      const name = teacher ? `${teacher.firstName} ${teacher.lastName}` : r.teacherId;
+      if (!map[st].names.includes(name)) map[st].names.push(name);
     }
     return map;
-  }, [caps, data]);
+  }, [caps, data.responses, data.teachers]);
+
+  const total = KEYS.reduce((s, k) => s + counts[k].n, 0);
+  const r = 70;
+  const c = 2 * Math.PI * r;
+  let acc = 0;
 
   return (
-    <div className="clay" style={{ padding: 12, textAlign: "center" }}>
-      <div className="tool-orbit">
+    <div className="clay" style={{ padding: 16, textAlign: "center" }}>
+      <div className="arc-wrap">
+        <svg viewBox="0 0 200 200" className="arc-svg">
+          <circle cx="100" cy="100" r={r} fill="none" stroke="#efe6d2" strokeWidth="18" />
+          {KEYS.map((k) => {
+            const n = counts[k].n;
+            const frac = total ? n / total : 0;
+            const start = acc;
+            acc += frac;
+            return (
+              <circle
+                key={k}
+                cx="100"
+                cy="100"
+                r={r}
+                fill="none"
+                stroke={STATUS_META[k].color}
+                strokeWidth="18"
+                strokeLinecap="round"
+                strokeDasharray={`${Math.max(0, frac * c - 6)} ${c}`}
+                strokeDashoffset={-start * c}
+                transform="rotate(-90 100 100)"
+                className="arc-seg"
+              />
+            );
+          })}
+        </svg>
         <div className="orbit-center">
           <ClayIcon name={tool.icon} bg={tool.color} size={26} />
-          <strong style={{ marginTop: 6 }}>{tool.name}</strong>
+          <strong>{tool.name}</strong>
         </div>
-        {KEYS.map((k, i) => (
-          <button
-            key={k}
-            className="orbit-bubble"
-            style={{ ...POS[i], background: STATUS_META[k].color }}
-            title={STATUS_META[k].label}
-            onClick={() => showNames && setOpen(open === k ? null : k)}
-          >
-            {counts[k].n}
+      </div>
+      <div className="arc-legend">
+        {KEYS.map((k) => (
+          <button key={k} className="arc-leg" onClick={() => showNames && setOpen(open === k ? null : k)}>
+            <span className="status-dot" style={{ background: STATUS_META[k].color }} />
+            {counts[k].n} {STATUS_META[k].label}
           </button>
         ))}
       </div>
-      <div className="small muted">{KEYS.map((k) => `${STATUS_META[k].label}`).join(" · ")}</div>
       {showNames && open && (
         <div className="small" style={{ textAlign: "right", marginTop: 8 }}>
           <strong>{STATUS_META[open].label}:</strong>

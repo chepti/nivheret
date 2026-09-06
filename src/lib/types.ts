@@ -122,6 +122,7 @@ export type Settings = {
   adminEmails: string[];
   praiseNote: string;
   weakIdFormOpen: boolean;
+  contentUpdatedAt?: string;
 };
 
 export type AppData = {

@@ -2,6 +2,10 @@ import { useMemo, useState } from "react";
 import { navigate } from "../app/router";
 import { useStore } from "../app/store";
 
+function startsWithHeb(name: string, q: string): boolean {
+  return name.replace(/['״"׳]/g, "").startsWith(q);
+}
+
 export function Who() {
   const { data, enterForm } = useStore();
   const institutionId = sessionStorage.getItem("nivheret-institution") ?? data.institutions[0]?.id;
@@ -13,10 +17,22 @@ export function Who() {
   const byEmail = teachers.find((t) => t.email.toLowerCase() === email.trim().toLowerCase());
   const filtered = useMemo(() => {
     const s = q.trim();
-    if (!s) return teachers.slice(0, 20);
+    if (!s) return teachers.slice().sort((a, b) => a.firstName.localeCompare(b.firstName, "he")).slice(0, 18);
+    const low = s.toLowerCase();
     return teachers
-      .filter((t) => `${t.firstName} ${t.lastName} ${t.email}`.includes(s))
-      .slice(0, 40);
+      .filter((t) => {
+        const full = `${t.firstName} ${t.lastName}`;
+        return (
+          startsWithHeb(t.firstName, s) ||
+          startsWithHeb(t.lastName, s) ||
+          startsWithHeb(full, s) ||
+          full.includes(s) ||
+          t.email.toLowerCase().startsWith(low) ||
+          t.email.toLowerCase().includes(low)
+        );
+      })
+      .sort((a, b) => a.firstName.localeCompare(b.firstName, "he"))
+      .slice(0, 50);
   }, [q, teachers]);
 
   const go = (id: string) => {
@@ -53,13 +69,20 @@ export function Who() {
         </div>
       ) : (
         <div className="clay" style={{ padding: 20 }}>
-          <input className="field" placeholder="חיפוש שם או מייל" value={q} onChange={(e) => setQ(e.target.value)} />
-          <ul style={{ listStyle: "none", padding: 0, margin: "12px 0 0" }}>
+          <input
+            className="field"
+            autoFocus
+            placeholder="הקלידי אותיות ראשונות — לדוגמה «חפ» או «בן»"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+          <p className="small">{q ? `${filtered.length} תוצאות` : "הקלידי כדי לסנן את הרשימה"}</p>
+          <ul style={{ listStyle: "none", padding: 0, margin: "8px 0 0" }}>
             {filtered.map((t) => (
               <li key={t.id}>
                 <button
                   className="row"
-                  style={{ width: "100%", justifyContent: "space-between", padding: "10px 4px", borderBottom: "1px solid #f3ead6" }}
+                  style={{ width: "100%", justifyContent: "space-between", padding: "10px 4px" }}
                   onClick={() => go(t.id)}
                 >
                   <span>{t.firstName} {t.lastName}</span>

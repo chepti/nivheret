@@ -30,6 +30,47 @@ import type {
   Teacher,
 } from "../lib/types";
 
+const CONTENT_KEYS = [
+  "institutions",
+  "periods",
+  "tools",
+  "capabilities",
+  "lessons",
+  "meetings",
+  "badges",
+  "settings",
+] as const;
+
+function isContentPart(part: Partial<AppData>): boolean {
+  return CONTENT_KEYS.some((k) => k in part);
+}
+
+function newerStamp(a?: string, b?: string): boolean {
+  return Boolean(a && (!b || a > b));
+}
+
+function mergeResponses(local: CapabilityResponse[], remote: CapabilityResponse[]): CapabilityResponse[] {
+  const map = new Map<string, CapabilityResponse>();
+  for (const r of remote) map.set(`${r.teacherId.toLowerCase()}__${r.capabilityId}`, r);
+  for (const r of local) {
+    const key = `${r.teacherId.toLowerCase()}__${r.capabilityId}`;
+    const rem = map.get(key);
+    if (!rem || newerStamp(r.updatedAt, rem.updatedAt)) map.set(key, r);
+  }
+  return [...map.values()];
+}
+
+function contentFingerprint(d: Partial<AppData>): string {
+  return JSON.stringify({
+    periods: d.periods,
+    tools: d.tools,
+    capabilities: d.capabilities,
+    lessons: d.lessons,
+    meetings: d.meetings,
+    badges: d.badges,
+  });
+}
+
 type Store = {
   data: AppData;
   session: Session | null;
@@ -75,26 +116,78 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await seedIfEmpty(local);
         const remote = await pullRemote();
         if (remote) {
+          const localAt = local.settings?.contentUpdatedAt;
+          const remoteAt = remote.settings?.contentUpdatedAt;
+          const sess = loadSession();
+          const adminHere = Boolean(
+            sess &&
+              (local.settings.adminEmails.includes(sess.email.toLowerCase()) ||
+                local.teachers.find((t) => t.id === sess.teacherId)?.role === "admin"),
+          );
+          const keepLocalContent =
+            newerStamp(localAt, remoteAt) ||
+            (adminHere && !remoteAt && contentFingerprint(local) !== contentFingerprint(remote));
+          const recovered = keepLocalContent
+            ? { ...local, settings: { ...local.settings, contentUpdatedAt: new Date().toISOString() } }
+            : null;
           setDataState((prev) => ({
-            ...prev,
-            ...remote,
+            ...(recovered ?? prev),
+            ...(keepLocalContent ? {} : remote),
             teachers: remote.teachers?.length ? remote.teachers : prev.teachers,
-            badges: (remote.badges ?? prev.badges).map(normalizeBadge),
-            responses: remote.responses ?? prev.responses,
+            badges: (keepLocalContent ? prev.badges : remote.badges ?? prev.badges).map(normalizeBadge),
+            responses: mergeResponses(prev.responses, remote.responses ?? []),
             rsvps: remote.rsvps ?? prev.rsvps,
             reactions: remote.reactions ?? prev.reactions,
           }));
+          if (recovered) {
+            skipRemoteContent.current = true;
+            void pushContent(recovered)
+              .then(() => setCloudSave("saved"))
+              .catch((err) => {
+                console.error("pushContent", err);
+                setCloudSave("error");
+              })
+              .finally(() => {
+                window.setTimeout(() => {
+                  skipRemoteContent.current = false;
+                }, 400);
+              });
+          }
         }
         hydrated.current = true;
         stop = watchShared((part) => {
-          if (skipRemoteContent.current) return;
-          setDataState((prev) => ({ ...prev, ...part }));
+          if (skipRemoteContent.current && isContentPart(part) && !("responses" in part) && !("teachers" in part)) {
+            return;
+          }
+          setDataState((prev) => ({
+            ...prev,
+            ...(skipRemoteContent.current && isContentPart(part) ? {} : part),
+            ...("responses" in part && part.responses
+              ? { responses: mergeResponses(prev.responses, part.responses) }
+              : {}),
+          }));
         });
       } catch (err) {
         console.error("Firebase sync", err);
       } finally {
         hydrated.current = true;
         setSyncReady(true);
+        const leftover = pending.current;
+        if (leftover) {
+          skipRemoteContent.current = true;
+          setCloudSave("saving");
+          void pushContent(leftover)
+            .then(() => {
+              setCloudSave("saved");
+              window.setTimeout(() => {
+                skipRemoteContent.current = false;
+              }, 400);
+            })
+            .catch((err) => {
+              console.error("pushContent", err);
+              setCloudSave("error");
+            });
+        }
       }
     })();
     return () => stop();
@@ -102,22 +195,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const setData: Store["setData"] = (updater) => {
     setDataState((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
+      const stamped: AppData = typeof updater === "function" ? updater(prev) : updater;
+      const next: AppData = {
+        ...stamped,
+        settings: { ...stamped.settings, contentUpdatedAt: new Date().toISOString() },
+      };
       pending.current = next;
       if (firebaseEnabled() && hydrated.current) {
+        skipRemoteContent.current = true;
         setCloudSave("saving");
         window.clearTimeout(saveTimer.current);
         saveTimer.current = window.setTimeout(() => {
           const payload = pending.current;
           if (!payload) return;
-          skipRemoteContent.current = true;
           void pushContent(payload)
-            .then(() => setCloudSave("saved"))
-            .catch(() => setCloudSave("error"))
-            .finally(() => {
+            .then(() => {
+              setCloudSave("saved");
               window.setTimeout(() => {
                 skipRemoteContent.current = false;
-              }, 900);
+              }, 400);
+            })
+            .catch((err) => {
+              console.error("pushContent", err);
+              setCloudSave("error");
             });
         }, 700);
         const changed = next.teachers.filter((t) => {

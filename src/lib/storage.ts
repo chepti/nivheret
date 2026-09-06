@@ -9,18 +9,19 @@ function mergeSeed(saved: AppData | null): AppData {
   if (!saved) return seed;
   return {
     ...seed,
+    ...saved,
     institutions: saved.institutions?.length ? saved.institutions : seed.institutions,
     teachers: saved.teachers?.length ? saved.teachers : seed.teachers,
     periods: saved.periods?.length ? saved.periods : seed.periods,
-    tools: saved.tools?.length ? saved.tools : seed.tools,
-    capabilities: saved.capabilities?.length ? saved.capabilities : seed.capabilities,
+    tools: saved.tools ?? seed.tools,
+    capabilities: saved.capabilities ?? seed.capabilities,
     lessons: saved.lessons ?? seed.lessons,
     responses: saved.responses ?? [],
     reactions: saved.reactions ?? [],
-    meetings: saved.meetings?.length ? saved.meetings : seed.meetings,
+    meetings: saved.meetings ?? seed.meetings,
     rsvps: saved.rsvps ?? [],
     badges: saved.badges?.length ? saved.badges : seed.badges,
-    settings: saved.settings ?? seed.settings,
+    settings: { ...seed.settings, ...saved.settings },
   };
 }
 

@@ -102,8 +102,8 @@ export function Cms() {
             <div>
               <div className="small muted">עריכת תוכן</div>
               <h1 style={{ fontSize: "1.4rem", margin: 0 }}>{titleOf(node)}</h1>
-              <div className="small" style={{ color: cloudSave === "error" ? "var(--want)" : "var(--mastered)" }}>
-                {!syncReady ? "טוען את הענן…" : cloudSave === "saving" ? "שומר בענן…" : cloudSave === "saved" ? "נשמר בענן" : cloudSave === "error" ? "השמירה נכשלה" : "השינויים נשמרים אוטומטית לענן"}
+              <div className="small" style={{ color: cloudSave === "error" ? "#c0392b" : "var(--mastered)", fontWeight: cloudSave === "error" ? 700 : 400 }}>
+                {!syncReady ? "טוען את הענן…" : cloudSave === "saving" ? "שומר בענן…" : cloudSave === "saved" ? "נשמר בענן — אפשר לרענן" : cloudSave === "error" ? "השמירה לענן נכשלה — העריכה עדיין אצלך במכשיר" : "השינויים נשמרים אוטומטית לענן"}
               </div>
             </div>
             <div className="row">
