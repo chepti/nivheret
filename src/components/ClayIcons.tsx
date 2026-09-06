@@ -17,22 +17,46 @@ const MAP = {
   sites: Layout,
 };
 
+export function ItemThumb({
+  image,
+  size = 50,
+  shape = "circle",
+  alt = "",
+}: {
+  image: string;
+  size?: number;
+  shape?: "circle" | "soft";
+  alt?: string;
+}) {
+  return (
+    <span className={`item-thumb ${shape}`} style={{ width: size, height: size }}>
+      <img src={image} alt={alt} />
+    </span>
+  );
+}
+
 export function ClayIcon({
   name,
   size = 28,
   bg = "#ffe56a",
+  image,
+  shape = "circle",
 }: {
   name: Tool["icon"];
   size?: number;
   bg?: string;
+  image?: string;
+  shape?: "circle" | "soft";
 }) {
+  const box = size + 22;
+  if (image) return <ItemThumb image={image} size={box} shape={shape} />;
   const Icon = MAP[name] ?? BookOpen;
   return (
     <span
       className="clay-icon"
       style={{
-        width: size + 22,
-        height: size + 22,
+        width: box,
+        height: box,
         borderRadius: "38%",
         background: bg,
         display: "grid",

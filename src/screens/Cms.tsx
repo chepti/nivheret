@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Award, BookOpen, CalendarDays, ChevronLeft, GripVertical, Plus, Settings, Trash2, Users } from "lucide-react";
 import { useStore } from "../app/store";
 import { GoogleGate } from "../components/GoogleGate";
+import { ClayIcon } from "../components/ClayIcons";
 import { ImagePaste } from "../components/ImagePaste";
 import { METRIC_OPTIONS, normalizeBadge } from "../lib/badges";
 import { newId } from "../lib/storage";
@@ -158,7 +159,10 @@ export function Cms() {
                 const n = data.capabilities.filter((c) => c.toolId === t.id).length;
                 return (
                   <button key={t.id} className="clay cms-card" onClick={() => setNode({ kind: "tool", id: t.id, tab: "caps" })}>
-                    <strong>{t.name}</strong>
+                    <span className="row">
+                      <ClayIcon name={t.icon} bg={t.color} image={t.image} size={22} />
+                      <strong>{t.name}</strong>
+                    </span>
                     <span className="small muted">{t.subtitle || `${n} יכולות`}</span>
                   </button>
                 );
@@ -191,6 +195,15 @@ export function Cms() {
                     <select className="field" value={tool.periodId} onChange={(e) => patchTool(tool.id, { periodId: e.target.value })}>
                       {data.periods.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
+                  </Field>
+                  <Field label="תמונה 1×1 — תוצג בעיגול ליד הכלי">
+                    <ImagePaste
+                      square
+                      maxEdge={200}
+                      value={tool.image}
+                      hint="הדביקי (Ctrl+V) או גררי. נחתך לריבוע ומוקטן אוטומטית."
+                      onChange={(image) => patchTool(tool.id, { image: image || undefined })}
+                    />
                   </Field>
                 </div>
               )}
@@ -243,6 +256,15 @@ export function Cms() {
                         <Field label="מה בודקים כאן">
                           <textarea className="field" value={c.description} onChange={(e) => patchCap(c.id, { description: e.target.value })} />
                         </Field>
+                        <Field label="תמונה 1×1 — עיגול ליד היכולת, צורה רכה בשיעור">
+                          <ImagePaste
+                            square
+                            maxEdge={200}
+                            value={c.image}
+                            hint="הדביקי (Ctrl+V) או גררי. נחתך לריבוע ומוקטן."
+                            onChange={(image) => patchCap(c.id, { image: image || undefined })}
+                          />
+                        </Field>
                         <button className="small" onClick={() => setData((d) => ({ ...d, capabilities: d.capabilities.filter((x) => x.id !== c.id) }))}>מחיקת יכולת</button>
                       </div>
                     ))}
@@ -272,15 +294,29 @@ export function Cms() {
                       </Field>
                       {quiz.options.map((opt, oi) => (
                         <Field key={oi} label={oi === quiz.correctIndex ? `תשובה ${oi + 1} (נכונה)` : `תשובה ${oi + 1}`}>
-                          <input className="field" value={opt} onChange={(e) => {
-                            const options = [...quiz.options];
-                            options[oi] = e.target.value;
-                            patchQuiz(l.id, qi, { options });
-                          }} />
+                          <div className="row">
+                            <input className="field grow" value={opt} onChange={(e) => {
+                              const options = [...quiz.options];
+                              options[oi] = e.target.value;
+                              patchQuiz(l.id, qi, { options });
+                            }} />
+                            {oi !== quiz.correctIndex && (
+                              <button className="small" onClick={() => patchQuiz(l.id, qi, { correctIndex: oi })}>זו הנכונה</button>
+                            )}
+                          </div>
                         </Field>
                       ))}
                     </div>
                   ))}
+                  <div className="row">
+                    <button className="pill btn-yellow small" onClick={() => addQuiz(l.id)}><Plus size={14} /> שאלת תרגול</button>
+                    {l.quiz.length > 1 && (
+                      <button className="small" onClick={() => setData((d) => ({
+                        ...d,
+                        lessons: d.lessons.map((x) => x.id !== l.id ? x : { ...x, quiz: x.quiz.slice(0, -1) }),
+                      }))}>הסרת השאלה האחרונה</button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -461,6 +497,15 @@ export function Cms() {
         quiz: [{ id: newId("q"), prompt: "שאלה", options: ["א", "ב", "ג"], correctIndex: 0 }],
         autoCompleteOnQuiz: true,
       }],
+    }));
+  }
+  function addQuiz(lessonId: string) {
+    setData((d) => ({
+      ...d,
+      lessons: d.lessons.map((l) => l.id !== lessonId ? l : {
+        ...l,
+        quiz: [...l.quiz, { id: newId("q"), prompt: "שאלה חדשה", options: ["א", "ב", "ג"], correctIndex: 0 }],
+      }),
     }));
   }
   function addMeet() {

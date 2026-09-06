@@ -34,6 +34,7 @@ export type Tool = {
   color: string;
   description: string;
   order: number;
+  image?: string;
 };
 
 export type Capability = {
@@ -42,6 +43,7 @@ export type Capability = {
   title: string;
   description: string;
   order: number;
+  image?: string;
 };
 
 export type QuizQuestion = {

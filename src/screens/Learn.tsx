@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Bookmark, Heart, PartyPopper } from "lucide-react";
 import { navigate, type Route } from "../app/router";
 import { useStore } from "../app/store";
-import { ClayIcon } from "../components/ClayIcons";
+import { ClayIcon, ItemThumb } from "../components/ClayIcons";
 import { GoogleGate } from "../components/GoogleGate";
 import { ImagePaste } from "../components/ImagePaste";
 
@@ -34,8 +34,20 @@ export function Learn({ route }: { route: Route }) {
     return (
       <GoogleGate>
         <button className="small muted" onClick={() => navigate("learn")}>חזרה ללמידה</button>
-        <h1>{lesson.title}</h1>
-        <p>{cap?.title}</p>
+        <div className="row" style={{ alignItems: "flex-start", marginBottom: 8 }}>
+          {(cap?.image || data.tools.find((t) => t.id === cap?.toolId)?.image) && (
+            <ItemThumb
+              image={cap?.image || data.tools.find((t) => t.id === cap?.toolId)?.image || ""}
+              size={88}
+              shape="soft"
+              alt=""
+            />
+          )}
+          <div>
+            <h1>{lesson.title}</h1>
+            <p>{cap?.title}</p>
+          </div>
+        </div>
         {lesson.videoUrl && (
           <div className="clay" style={{ overflow: "hidden", aspectRatio: "16/9", margin: "12px 0" }}>
             <iframe title={lesson.title} src={lesson.videoUrl} style={{ width: "100%", height: "100%", border: 0 }} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
@@ -112,7 +124,7 @@ export function Learn({ route }: { route: Route }) {
         return (
           <article key={tool.id} className="clay" style={{ padding: 16, marginBottom: 12 }}>
             <div className="row">
-              <ClayIcon name={tool.icon} bg={tool.color} />
+              <ClayIcon name={tool.icon} bg={tool.color} image={tool.image} />
               <div>
                 <h2>{tool.name}</h2>
                 <p className="small" style={{ margin: 0 }}>{lessons.length ? `${lessons.length} שיעורים מוכנים` : "עדיין אין תוכן — מוכן ב־CMS"}</p>
@@ -120,10 +132,16 @@ export function Learn({ route }: { route: Route }) {
             </div>
             {lessons.map((l) => {
               const r = responseOf(l.capabilityId);
+              const lessonCap = caps.find((c) => c.id === l.capabilityId);
               return (
                 <button key={l.id} className="clay cap-card" style={{ width: "100%", textAlign: "right", marginTop: 10 }} onClick={() => navigate("lesson", l.id)}>
-                  <strong>{l.title}</strong>
-                  <div className="small muted">{r.completedLearning ? "הושלם ✓" : r.savedForLater ? "שמור להמשך" : "פתחי שיעור"}</div>
+                  <span className="row">
+                    {lessonCap?.image && <ItemThumb image={lessonCap.image} size={40} />}
+                    <span>
+                      <strong>{l.title}</strong>
+                      <div className="small muted">{r.completedLearning ? "הושלם ✓" : r.savedForLater ? "שמור להמשך" : "פתחי שיעור"}</div>
+                    </span>
+                  </span>
                 </button>
               );
             })}

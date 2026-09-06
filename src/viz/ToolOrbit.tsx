@@ -65,7 +65,7 @@ export function ToolOrbit({ tool, showNames }: { tool: Tool; showNames: boolean 
           })}
         </svg>
         <div className="orbit-center">
-          <ClayIcon name={tool.icon} bg={tool.color} size={26} />
+          <ClayIcon name={tool.icon} bg={tool.color} image={tool.image} size={26} />
           <strong>{tool.name}</strong>
         </div>
       </div>

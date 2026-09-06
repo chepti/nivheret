@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { navigate } from "../app/router";
 import { useStore } from "../app/store";
-import { ClayIcon } from "../components/ClayIcons";
+import { ClayIcon, ItemThumb } from "../components/ClayIcons";
 import { LEARN_HOW_LABEL, primaryStatus, STATUS_META, type StatusKey } from "../lib/status";
 import type { LearnHow } from "../lib/types";
 import { ToolOrbit } from "../viz/ToolOrbit";
@@ -59,7 +59,7 @@ export function Checklist() {
               return (
                 <article key={tool.id} className="clay" style={{ padding: 16, marginBottom: 14 }}>
                   <div className="row" style={{ marginBottom: 10 }}>
-                    <ClayIcon name={tool.icon} bg={tool.color} />
+                    <ClayIcon name={tool.icon} bg={tool.color} image={tool.image} />
                     <div className="grow">
                       <h2>{tool.name}</h2>
                       <p className="small" style={{ margin: 0 }}>{tool.subtitle}</p>
@@ -79,9 +79,12 @@ export function Checklist() {
                             style={{ width: "100%", justifyContent: "space-between" }}
                             onClick={() => setOpenId(open ? null : cap.id)}
                           >
-                            <span>
-                              <strong>{cap.title}</strong>
-                              <div className="small muted">{cap.description}</div>
+                            <span className="row" style={{ alignItems: "flex-start", flex: 1 }}>
+                              {cap.image && <ItemThumb image={cap.image} size={40} />}
+                              <span>
+                                <strong>{cap.title}</strong>
+                                <div className="small muted">{cap.description}</div>
+                              </span>
                             </span>
                           </button>
                           {open && (
