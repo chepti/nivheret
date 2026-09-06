@@ -82,6 +82,7 @@ export type Reaction = {
   liked: boolean;
   productNote?: string;
   productImage?: string;
+  productUrl?: string;
   createdAt: string;
 };
 

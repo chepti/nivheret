@@ -3,6 +3,7 @@ import { Sparkles } from "lucide-react";
 import { navigate } from "../app/router";
 import { useStore } from "../app/store";
 import { ClayIcon, ItemThumb } from "../components/ClayIcons";
+import { ProductDrawer } from "../components/ProductDrawer";
 import { LEARN_HOW_LABEL, primaryStatus, STATUS_META, type StatusKey } from "../lib/status";
 import type { LearnHow } from "../lib/types";
 import { ToolOrbit } from "../viz/ToolOrbit";
@@ -11,6 +12,7 @@ export function Checklist() {
   const { data, session, upsertResponse, responseOf } = useStore();
   const [openId, setOpenId] = useState<string | null>(null);
   const [savedFlash, setSavedFlash] = useState(false);
+  const [productCap, setProductCap] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session) navigate("welcome");
@@ -112,9 +114,22 @@ export function Checklist() {
                                 כבר שולטת
                               </label>
                               <label className="check-row">
-                                <input type="checkbox" checked={r.hasProduct} onChange={(e) => { upsertResponse({ capabilityId: cap.id, hasProduct: e.target.checked }); flash(); }} />
+                                <input
+                                  type="checkbox"
+                                  checked={r.hasProduct}
+                                  onChange={(e) => {
+                                    upsertResponse({ capabilityId: cap.id, hasProduct: e.target.checked });
+                                    flash();
+                                    if (e.target.checked) setProductCap(cap.id);
+                                  }}
+                                />
                                 יש לי תוצר לשתף
                               </label>
+                              {r.hasProduct && (
+                                <button className="pill btn-yellow small" style={{ marginInlineStart: 28 }} onClick={() => setProductCap(cap.id)}>
+                                  עריכת תוצר
+                                </button>
+                              )}
                               <label className="check-row">
                                 <input type="checkbox" checked={r.readyToTeach} onChange={(e) => { upsertResponse({ capabilityId: cap.id, readyToTeach: e.target.checked }); flash(); }} />
                                 מוכנה ללמד עמיתה 1:1
@@ -131,6 +146,14 @@ export function Checklist() {
           </section>
         );
       })}
+
+      {productCap && (
+        <ProductDrawer
+          capabilityId={productCap}
+          title={data.capabilities.find((c) => c.id === productCap)?.title ?? "תוצר"}
+          onClose={() => setProductCap(null)}
+        />
+      )}
 
       <section className="live-dash clay">
         <h2>דשבורד חי</h2>

@@ -393,12 +393,12 @@ export function Cms() {
                 <Field label="משפט בפרופיל — אפשר {current} ו־{target}">
                   <input className="field" value={b.description} onChange={(e) => patchBadge(b.id, { description: e.target.value })} />
                 </Field>
-                <Field label="תמונת דמות">
+                <Field label="תמונת באדג׳ (PNG שקוף)">
                   <ImagePaste
                     value={b.image}
-                    maxEdge={280}
-                    hint="הדביקי או העלי תמונת דמות לבאדג׳"
-                    onChange={(image) => patchBadge(b.id, { image })}
+                    maxEdge={240}
+                    hint="לחצי בתיבה ואז Ctrl+V, או גררי PNG. הרקע נשאר שקוף."
+                    onChange={(image) => patchBadge(b.id, { image: image || undefined })}
                   />
                 </Field>
                 <button className="small" onClick={() => setData((d) => ({ ...d, badges: d.badges.filter((x) => x.id !== b.id) }))}>מחיקת באדג׳</button>

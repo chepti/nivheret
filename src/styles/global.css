@@ -341,21 +341,85 @@ p { margin: 0 0 10px; color: var(--muted); line-height: 1.55; }
   box-shadow: 0 10px 24px rgba(70, 50, 10, 0.22);
 }
 .badge-grid { display: grid; gap: 12px; }
-.badge-card {
-  display: grid; grid-template-columns: 72px 1fr; gap: 12px; align-items: center;
-  padding: 10px 4px;
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px 10px;
+  margin-top: 8px;
 }
-.badge-card.earned strong { color: var(--ink); }
+.badge-cell {
+  width: calc(50% - 10px);
+  max-width: 150px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.badge-cell strong { font-size: 0.88rem; }
+.badge-cell .badge-face {
+  filter: grayscale(1);
+  opacity: 0.72;
+}
+.badge-cell.earned .badge-face {
+  filter: none;
+  opacity: 1;
+}
 .badge-face {
-  width: 72px; height: 72px; border-radius: 50%; object-fit: cover;
-  box-shadow: var(--shadow-sm); background: #ffe56a;
+  width: 86px; height: 86px;
+  object-fit: contain;
+  background: transparent;
+  display: grid; place-items: center;
 }
-.badge-face.placeholder { display: grid; place-items: center; font-size: 1.4rem; font-weight: 800; }
+.badge-face.placeholder {
+  border-radius: 50%;
+  background: #efe6d2;
+  color: #7a7380;
+  font-size: 1.4rem; font-weight: 800;
+}
+.badge-cell.earned .badge-face.placeholder { background: #ffe56a; color: var(--ink); }
 .badge-bar { height: 8px; border-radius: 999px; background: #f1ead8; margin-top: 8px; overflow: hidden; }
 .badge-bar span { display: block; height: 100%; background: #f5c518; border-radius: 999px; }
 .profile-item {
   display: flex; justify-content: space-between; align-items: center; gap: 12px;
   padding: 10px 0;
+}
+.drawer-root { position: fixed; inset: 0; z-index: 40; }
+.drawer-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(42, 36, 48, 0.35);
+  border: 0;
+}
+.drawer-sheet {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  max-height: min(88vh, 720px);
+  overflow: auto;
+  background: #fffdf7;
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -12px 40px rgba(70, 50, 10, 0.18);
+  padding: 10px 18px calc(var(--nav-h) + 20px);
+}
+.drawer-handle {
+  width: 48px; height: 5px; border-radius: 999px;
+  background: #efe6d2; margin: 6px auto 14px;
+}
+@media (min-width: 760px) {
+  .drawer-sheet {
+    inset: auto;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    width: min(480px, 92vw);
+    transform: translate(-50%, -50%);
+    border-radius: 28px;
+    max-height: 82vh;
+    padding: 18px 22px 22px;
+  }
+  .badge-cell { width: 120px; }
 }
 .paste-box {
   margin-top: 10px; padding: 16px; border-radius: 22px; background: #fffaf0;

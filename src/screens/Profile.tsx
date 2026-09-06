@@ -3,6 +3,7 @@ import { Bookmark, Sparkles } from "lucide-react";
 import { navigate } from "../app/router";
 import { useStore } from "../app/store";
 import { GoogleGate } from "../components/GoogleGate";
+import { ItemThumb } from "../components/ClayIcons";
 import { teacherBadgeRows } from "../lib/badges";
 import { LEARN_HOW_LABEL } from "../lib/status";
 
@@ -34,21 +35,17 @@ export function Profile() {
 
       <section className="clay" style={{ padding: 18, marginTop: 12 }}>
         <h2><Sparkles size={18} /> באדג׳ים</h2>
-        <div className="badge-grid">
-          {badgeRows.map(({ badge, current, target, earned, text }) => (
-            <article key={badge.id} className={`badge-card ${earned ? "earned" : ""}`}>
+        <p className="small">צבעוני = הושג. השאר מחכים בשחור־לבן.</p>
+        <div className="badge-row">
+          {badgeRows.map(({ badge, earned, text }) => (
+            <article key={badge.id} className={`badge-cell ${earned ? "earned" : ""}`} title={text}>
               {badge.image ? (
                 <img src={badge.image} alt="" className="badge-face" />
               ) : (
                 <div className="badge-face placeholder">{badge.title[0]}</div>
               )}
-              <div>
-                <strong>{badge.title}</strong>
-                <div className="small">{text}</div>
-                <div className="badge-bar" aria-hidden>
-                  <span style={{ width: `${Math.min(100, Math.round((current / target) * 100))}%` }} />
-                </div>
-              </div>
+              <strong>{badge.title}</strong>
+              <span className="small muted">{text}</span>
             </article>
           ))}
         </div>
@@ -62,11 +59,15 @@ export function Profile() {
           const tool = data.tools.find((t) => t.id === c.toolId);
           const how = responseOf(c.id).learnHow;
           const lesson = data.lessons.find((l) => l.capabilityId === c.id);
+          const pic = c.image || tool?.image;
           return (
             <div key={c.id} className="profile-item">
-              <div>
-                <strong>{c.title}</strong>
-                <div className="small muted">{[tool?.name, how ? LEARN_HOW_LABEL[how] : null].filter(Boolean).join(" · ")}</div>
+              <div className="cap-line">
+                {pic && <ItemThumb image={pic} size={56} shape="free" />}
+                <span className="cap-line-text">
+                  <strong>{c.title}</strong>
+                  <span className="small muted">{[tool?.name, how ? LEARN_HOW_LABEL[how] : null].filter(Boolean).join(" · ")}</span>
+                </span>
               </div>
               {lesson && (
                 <button className="pill btn-yellow small" onClick={() => navigate("lesson", lesson.id)}>לשיעור</button>
@@ -84,11 +85,25 @@ export function Profile() {
       <section className="clay" style={{ padding: 18, marginTop: 12 }}>
         <h2><Bookmark size={18} /> שמור ללמידה בהמשך</h2>
         {savedView.length === 0 && <p>אין פריטים שמורים עדיין.</p>}
-        {savedView.map((c) => (
-          <div key={c.id} className="profile-item">
-            <strong>{c.title}</strong>
-          </div>
-        ))}
+        {savedView.map((c) => {
+          const tool = data.tools.find((t) => t.id === c.toolId);
+          const pic = c.image || tool?.image;
+          const lesson = data.lessons.find((l) => l.capabilityId === c.id);
+          return (
+            <div key={c.id} className="profile-item">
+              <div className="cap-line">
+                {pic && <ItemThumb image={pic} size={56} shape="free" />}
+                <span className="cap-line-text">
+                  <strong>{c.title}</strong>
+                  {tool && <span className="small muted">{tool.name}</span>}
+                </span>
+              </div>
+              {lesson && (
+                <button className="pill btn-yellow small" onClick={() => navigate("lesson", lesson.id)}>לשיעור</button>
+              )}
+            </div>
+          );
+        })}
         {saved.length > 3 && (
           <button className="pill btn-primary" onClick={() => setShowAllSaved((v) => !v)}>
             {showAllSaved ? "הצגי פחות" : "הצגי את כל הפריטים ללמידה"}
