@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { navigate } from "../app/router";
 import { useStore } from "../app/store";
+import { GoogleSignButton } from "../components/GoogleSignButton";
 
 export function Welcome() {
   const { data, firebaseOn, syncReady } = useStore();
@@ -47,6 +48,8 @@ export function Welcome() {
         >
           המשך
         </button>
+        <div className="google-split">או</div>
+        <GoogleSignButton label="כניסה עם חשבון גוגל" after={() => navigate("checklist")} />
       </div>
     </div>
   );

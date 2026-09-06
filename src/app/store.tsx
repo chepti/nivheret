@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { earnedBadgeIds, normalizeBadge } from "../lib/badges";
-import { firebaseEnabled, signInWithGoogle, signOutGoogle } from "../lib/firebase";
+import { completeGoogleRedirect, firebaseEnabled, signInWithGoogle, signOutGoogle } from "../lib/firebase";
 import { emptyResponse } from "../lib/status";
 import { loadData, loadSession, saveData, saveSession } from "../lib/storage";
 import {
@@ -82,6 +82,7 @@ type Store = {
   cloudSave: "idle" | "saving" | "saved" | "error";
   setData: (updater: AppData | ((prev: AppData) => AppData)) => void;
   enterForm: (institutionId: string, teacher: Teacher) => void;
+  enterWithGoogle: () => Promise<{ ok: true } | { ok: false; error: string }>;
   linkGoogle: () => Promise<string | null>;
   logout: () => void;
   upsertResponse: (patch: Partial<CapabilityResponse> & { capabilityId: string }) => void;
@@ -249,9 +250,57 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     saveSession(next);
   };
 
+  const sessionFromGoogleEmail = (email: string, source: AppData): Session | null => {
+    const match = source.teachers.find((t) => t.email.toLowerCase() === email);
+    const admin = source.settings.adminEmails.includes(email);
+    if (!match && !admin) return null;
+    const t = match ?? {
+      id: email,
+      institutionId: source.institutions[0]?.id ?? "tzviama",
+      firstName: email.split("@")[0] ?? "",
+      lastName: "",
+      email,
+      role: "admin" as const,
+    };
+    return {
+      institutionId: t.institutionId,
+      teacherId: t.id,
+      email: t.email,
+      googleLinked: true,
+    };
+  };
+
+  const applyGoogleEmail = (email: string): boolean => {
+    const next = sessionFromGoogleEmail(email, data);
+    if (!next) return false;
+    setSessionState(next);
+    saveSession(next);
+    return true;
+  };
+
+  useEffect(() => {
+    if (!firebaseEnabled()) return;
+    void completeGoogleRedirect().then((email) => {
+      if (!email) return;
+      if (applyGoogleEmail(email)) location.hash = "#/checklist";
+    });
+    // once on mount — data comes from localStorage / first render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const enterWithGoogle: Store["enterWithGoogle"] = async () => {
+    if (!firebaseEnabled()) return { ok: false, error: "Firebase עדיין לא מחובר." };
+    const email = await signInWithGoogle();
+    if (!email) return { ok: true };
+    if (!applyGoogleEmail(email)) {
+      return { ok: false, error: `החשבון ${email} לא נמצא בספר המורות.` };
+    }
+    return { ok: true };
+  };
+
   const linkGoogle: Store["linkGoogle"] = async () => {
-    if (!session) return null;
     if (!firebaseEnabled()) {
+      if (!session) return null;
       const next = { ...session, googleLinked: true };
       setSessionState(next);
       saveSession(next);
@@ -259,19 +308,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
     const email = await signInWithGoogle();
     if (!email) return null;
-    const match =
-      data.teachers.find((t) => t.email.toLowerCase() === email) ??
-      data.teachers.find((t) => t.id === session.teacherId);
-    if (!match) return email;
-    const next: Session = {
-      institutionId: match.institutionId,
-      teacherId: match.id,
-      email: match.email,
-      googleLinked: true,
-    };
-    setSessionState(next);
-    saveSession(next);
-    return email;
+    if (applyGoogleEmail(email)) return email;
+    if (session) {
+      const next = { ...session, googleLinked: true };
+      setSessionState(next);
+      saveSession(next);
+      return email;
+    }
+    return null;
   };
 
   const logout = () => {
@@ -358,6 +402,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     cloudSave,
     setData,
     enterForm,
+    enterWithGoogle,
     linkGoogle,
     logout,
     upsertResponse,

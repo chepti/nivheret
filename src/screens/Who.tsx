@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { navigate } from "../app/router";
 import { useStore } from "../app/store";
+import { GoogleSignButton } from "../components/GoogleSignButton";
 
 function startsWithHeb(name: string, q: string): boolean {
   return name.replace(/['״"׳]/g, "").startsWith(q);
@@ -46,8 +47,13 @@ export function Who() {
     <div>
       <button className="small muted" onClick={() => navigate("welcome")}>חזרה למוסד</button>
       <h1 style={{ marginTop: 8 }}>מי את?</h1>
-      <p>אין צורך בסיסמה — רק לזהות את המייל האולפניסטי.</p>
-      <div className="row" style={{ margin: "16px 0" }}>
+      <p>אפשר להיכנס עם חשבון גוגל, או לזהות את עצמך בלי סיסמה.</p>
+      <div className="clay" style={{ padding: 20, margin: "16px 0" }}>
+        <GoogleSignButton after={() => navigate("checklist")} />
+        <p className="small" style={{ margin: "12px 0 0" }}>מתאים לחשבון האולפנה או ל־Gmail שמופיע בספר המורות.</p>
+      </div>
+      <p className="small muted">או זיהוי קל:</p>
+      <div className="row" style={{ margin: "8px 0 16px" }}>
         <button className={`pill ${mode === "email" ? "btn-yellow" : "btn-primary"}`} onClick={() => setMode("email")}>יש לי את המייל</button>
         <button className={`pill ${mode === "list" ? "btn-yellow" : "btn-primary"}`} onClick={() => setMode("list")}>אמצא את עצמי ברשימה</button>
       </div>

@@ -23,9 +23,10 @@ const ADMIN_TABS: typeof TABS = [
 ];
 
 export function Shell({ route, children }: { route: Route; children: React.ReactNode }) {
-  const { session, isAdmin, teacher, logout } = useStore();
+  const { session, isAdmin, teacher, logout, linkGoogle, firebaseOn } = useStore();
   const showNav = Boolean(session) && route.name !== "welcome" && route.name !== "who";
   const tabs = isAdmin ? [...TABS, ...ADMIN_TABS] : TABS;
+  const needGoogle = Boolean(session && firebaseOn && !session.googleLinked);
 
   return (
     <>
@@ -35,9 +36,16 @@ export function Shell({ route, children }: { route: Route; children: React.React
             <div className="small muted">נבחרת · תשפ״ז</div>
             <strong>{teacher ? `${teacher.firstName} ${teacher.lastName}` : session.email}</strong>
           </div>
-          <button className="pill btn-primary small" onClick={() => { logout(); navigate("welcome"); }}>
-            יציאה
-          </button>
+          <div className="row">
+            {needGoogle && (
+              <button className="pill btn-yellow small" onClick={() => { void linkGoogle(); }}>
+                כניסה עם גוגל
+              </button>
+            )}
+            <button className="pill btn-primary small" onClick={() => { logout(); navigate("welcome"); }}>
+              יציאה
+            </button>
+          </div>
         </header>
       )}
       {children}

@@ -1,5 +1,13 @@
 import { initializeApp, type FirebaseApp } from "firebase/app";
-import { GoogleAuthProvider, getAuth, signInWithPopup, signOut, type Auth } from "firebase/auth";
+import {
+  GoogleAuthProvider,
+  getAuth,
+  getRedirectResult,
+  signInWithPopup,
+  signInWithRedirect,
+  signOut,
+  type Auth,
+} from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
 
@@ -44,13 +52,48 @@ export function getFirebase(): FirebaseBundle | null {
   return bundle;
 }
 
+function googleProvider(): GoogleAuthProvider {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+  provider.addScope("email");
+  provider.addScope("profile");
+  return provider;
+}
+
+export function googleErrorMessage(err: unknown): string {
+  const code = typeof err === "object" && err && "code" in err ? String((err as { code: string }).code) : "";
+  if (code.includes("unauthorized-domain")) {
+    return "הדומיין לא מורשה ב־Firebase. צריך להוסיף nivheret.web.app ו־localhost ברשימת Authorized domains.";
+  }
+  if (code.includes("popup-blocked")) return "הדפדפן חסם את חלון גוגל. נסי שוב, או תרשי חלונות קופצים.";
+  if (code.includes("popup-closed")) return "חלון גוגל נסגר לפני סיום הכניסה. נסי שוב.";
+  if (code.includes("network-request-failed")) return "אין חיבור יציב לגוגל. בדקי את הרשת ונסי שוב.";
+  if (code.includes("operation-not-allowed")) return "כניסת גוגל עדיין לא הופעלה בפרויקט Firebase.";
+  return "לא הצלחנו להתחבר לגוגל.";
+}
+
 export async function signInWithGoogle(): Promise<string | null> {
   const fb = getFirebase();
   if (!fb) return null;
-  const provider = new GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: "select_account", hd: "tzviama.com" });
-  const cred = await signInWithPopup(fb.auth, provider);
-  return cred.user.email?.toLowerCase() ?? null;
+  const provider = googleProvider();
+  try {
+    const cred = await signInWithPopup(fb.auth, provider);
+    return cred.user.email?.toLowerCase() ?? null;
+  } catch (err) {
+    const code = typeof err === "object" && err && "code" in err ? String((err as { code: string }).code) : "";
+    if (code.includes("popup-blocked") || code.includes("operation-not-supported")) {
+      await signInWithRedirect(fb.auth, provider);
+      return null;
+    }
+    throw err;
+  }
+}
+
+export async function completeGoogleRedirect(): Promise<string | null> {
+  const fb = getFirebase();
+  if (!fb) return null;
+  const cred = await getRedirectResult(fb.auth);
+  return cred?.user.email?.toLowerCase() ?? null;
 }
 
 export async function signOutGoogle(): Promise<void> {

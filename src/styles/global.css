@@ -67,6 +67,27 @@ button { cursor: pointer; border: none; background: none; }
   background: linear-gradient(180deg, #ffe56a, #f5c518);
   color: var(--ink);
 }
+.btn-google {
+  background: #fff;
+  color: var(--ink);
+  width: 100%;
+  justify-content: center;
+  border: 1px solid #eee4d0;
+}
+.google-split {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 14px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.google-split::before, .google-split::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #efe6d2;
+}
 
 h1, h2, h3 { margin: 0 0 8px; letter-spacing: -0.02em; }
 h1 { font-size: clamp(1.7rem, 4vw, 2.4rem); }
