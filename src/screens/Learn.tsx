@@ -1,0 +1,133 @@
+import { useState } from "react";
+import { Bookmark, Heart, PartyPopper } from "lucide-react";
+import { navigate, type Route } from "../app/router";
+import { useStore } from "../app/store";
+import { ClayIcon } from "../components/ClayIcons";
+import { GoogleGate } from "../components/GoogleGate";
+
+export function Learn({ route }: { route: Route }) {
+  const { data, responseOf, upsertResponse, upsertReaction, session } = useStore();
+  const [quizOk, setQuizOk] = useState<Record<string, boolean>>({});
+  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [celebrate, setCelebrate] = useState(false);
+
+  if (!session) return null;
+
+  const lesson = route.name === "lesson" ? data.lessons.find((l) => l.id === route.id) : null;
+  const reaction = lesson
+    ? data.reactions.find((r) => r.teacherId === session.teacherId && r.capabilityId === lesson.capabilityId)
+    : undefined;
+
+  if (lesson) {
+    const cap = data.capabilities.find((c) => c.id === lesson.capabilityId);
+    const resp = responseOf(lesson.capabilityId);
+    const checkQuiz = () => {
+      const ok = lesson.quiz.every((q) => answers[q.id] === q.correctIndex);
+      setQuizOk((p) => ({ ...p, [lesson.id]: ok }));
+      if (ok && lesson.autoCompleteOnQuiz) {
+        upsertResponse({ capabilityId: lesson.capabilityId, completedLearning: true });
+        setCelebrate(true);
+        window.setTimeout(() => setCelebrate(false), 1600);
+      }
+    };
+    return (
+      <GoogleGate>
+        <button className="small muted" onClick={() => navigate("learn")}>חזרה ללמידה</button>
+        <h1>{lesson.title}</h1>
+        <p>{cap?.title}</p>
+        {lesson.videoUrl && (
+          <div className="clay" style={{ overflow: "hidden", aspectRatio: "16/9", margin: "12px 0" }}>
+            <iframe title={lesson.title} src={lesson.videoUrl} style={{ width: "100%", height: "100%", border: 0 }} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+          </div>
+        )}
+        <div className="clay" style={{ padding: 18 }}>
+          <p style={{ color: "var(--ink)" }}>{lesson.body}</p>
+        </div>
+        {lesson.quiz.map((q) => (
+          <div key={q.id} className="clay" style={{ padding: 16, marginTop: 12 }}>
+            <strong>{q.prompt}</strong>
+            {q.options.map((opt, i) => (
+              <label key={opt} className="check-row">
+                <input type="radio" name={q.id} checked={answers[q.id] === i} onChange={() => setAnswers((p) => ({ ...p, [q.id]: i }))} />
+                {opt}
+              </label>
+            ))}
+          </div>
+        ))}
+        <div className="row" style={{ marginTop: 14 }}>
+          <button className="pill btn-ink" onClick={checkQuiz}>בדקי אותי</button>
+          <button className="pill btn-primary" onClick={() => upsertResponse({ capabilityId: lesson.capabilityId, savedForLater: !resp.savedForLater })}>
+            <Bookmark size={16} /> {resp.savedForLater ? "שמור להמשך ✓" : "שמור ללמידה בהמשך"}
+          </button>
+        </div>
+        {quizOk[lesson.id] === true && <p style={{ color: "var(--mastered)" }}>כל הכבוד — השיעור הושלם.</p>}
+        {quizOk[lesson.id] === false && (
+          <div>
+            <p>עוד לא מדויק. אפשר לנסות שוב או לסמן השלמה ידנית.</p>
+            <button className="pill btn-yellow" onClick={() => upsertResponse({ capabilityId: lesson.capabilityId, completedLearning: true })}>סמני השלמה</button>
+          </div>
+        )}
+        {celebrate && <div className="toast-save dopamine"><PartyPopper size={16} /> כל הכבוד!</div>}
+        <div className="clay" style={{ padding: 16, marginTop: 16 }}>
+          <h2>איך היה?</h2>
+          <button className={`pill ${reaction?.liked ? "btn-yellow" : "btn-primary"}`} onClick={() => upsertReaction({ capabilityId: lesson.capabilityId, liked: !reaction?.liked })}>
+            <Heart size={16} /> אהבתי
+          </button>
+          <textarea
+            className="field"
+            style={{ marginTop: 12, minHeight: 80 }}
+            placeholder="הנה התוצר שלי…"
+            value={reaction?.productNote ?? ""}
+            onChange={(e) => upsertReaction({ capabilityId: lesson.capabilityId, productNote: e.target.value })}
+          />
+          <input
+            className="field"
+            style={{ marginTop: 8 }}
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = () => upsertReaction({ capabilityId: lesson.capabilityId, productImage: String(reader.result) });
+              reader.readAsDataURL(file);
+            }}
+          />
+          {reaction?.productImage && <img alt="תוצר" src={reaction.productImage} style={{ width: "100%", borderRadius: 20, marginTop: 10 }} />}
+        </div>
+      </GoogleGate>
+    );
+  }
+
+  return (
+    <GoogleGate>
+      <h1>איזור הלמידה</h1>
+      <p>איזורים עם נקודה ירוקה כבר מלאים בחומר. השאר יתמלאו במהלך השנה.</p>
+      {data.tools.map((tool) => {
+        const caps = data.capabilities.filter((c) => c.toolId === tool.id);
+        const lessons = data.lessons.filter((l) => caps.some((c) => c.id === l.capabilityId));
+        return (
+          <article key={tool.id} className="clay" style={{ padding: 16, marginBottom: 12 }}>
+            <div className="row">
+              <ClayIcon name={tool.icon} bg={tool.color} />
+              <div>
+                <h2>{tool.name}</h2>
+                <p className="small" style={{ margin: 0 }}>{lessons.length ? `${lessons.length} שיעורים מוכנים` : "עדיין אין תוכן — מוכן ב־CMS"}</p>
+              </div>
+              {lessons.length > 0 && <span className="content-dot" />}
+            </div>
+            {lessons.map((l) => {
+              const r = responseOf(l.capabilityId);
+              return (
+                <button key={l.id} className="clay cap-card" style={{ width: "100%", textAlign: "right", marginTop: 10 }} onClick={() => navigate("lesson", l.id)}>
+                  <strong>{l.title}</strong>
+                  <div className="small muted">{r.completedLearning ? "הושלם ✓" : r.savedForLater ? "שמור להמשך" : "פתחי שיעור"}</div>
+                </button>
+              );
+            })}
+          </article>
+        );
+      })}
+    </GoogleGate>
+  );
+}
