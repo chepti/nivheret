@@ -1,5 +1,6 @@
 import { createSeed } from "../data/seed";
 import type { AppData, Capability, Lesson, Session } from "./types";
+import { neutralizeTeacherVoice } from "./voice";
 
 const DATA_KEY = "nivheret-data-v1";
 const SESSION_KEY = "nivheret-session-v1";
@@ -69,16 +70,55 @@ export function sanitizeCapabilityDescription(description: string): string {
   return tidyDescription(next);
 }
 
-export function dropUnwantedContent<T extends Pick<AppData, "capabilities" | "lessons">>(data: T): T {
+export function dropUnwantedContent<T extends Pick<AppData, "capabilities" | "lessons"> & Partial<Pick<AppData, "meetings" | "badges" | "settings" | "tools">>>(data: T): T {
   const capabilities = (data.capabilities ?? [])
     .filter((c) => !isDroppedCapability(c.id, c.title))
     .map((c) => {
-      const description = sanitizeCapabilityDescription(c.description);
-      return description === c.description ? c : { ...c, description };
+      const description = neutralizeTeacherVoice(sanitizeCapabilityDescription(c.description));
+      const title = neutralizeTeacherVoice(c.title);
+      return title === c.title && description === c.description ? c : { ...c, title, description };
     });
   const keep = new Set(capabilities.map((c) => c.id));
-  const lessons = (data.lessons ?? []).filter((l) => keep.has(l.capabilityId));
-  return { ...data, capabilities, lessons };
+  const lessons = (data.lessons ?? [])
+    .filter((l) => keep.has(l.capabilityId))
+    .map((l) => {
+      const title = neutralizeTeacherVoice(l.title);
+      const body = neutralizeTeacherVoice(l.body);
+      const quiz = l.quiz.map((q) => ({
+        ...q,
+        prompt: neutralizeTeacherVoice(q.prompt),
+        options: q.options.map((o) => neutralizeTeacherVoice(o)),
+      }));
+      return { ...l, title, body, quiz };
+    });
+  const meetings = data.meetings?.map((m) => ({
+    ...m,
+    title: neutralizeTeacherVoice(m.title),
+    description: neutralizeTeacherVoice(m.description),
+  }));
+  const badges = data.badges?.map((b) => ({
+    ...b,
+    title: neutralizeTeacherVoice(b.title),
+    description: neutralizeTeacherVoice(b.description),
+  }));
+  const tools = data.tools?.map((t) => ({
+    ...t,
+    name: neutralizeTeacherVoice(t.name),
+    subtitle: neutralizeTeacherVoice(t.subtitle),
+    description: neutralizeTeacherVoice(t.description),
+  }));
+  const settings = data.settings
+    ? { ...data.settings, praiseNote: neutralizeTeacherVoice(data.settings.praiseNote) }
+    : data.settings;
+  return {
+    ...data,
+    capabilities,
+    lessons,
+    ...(meetings ? { meetings } : {}),
+    ...(badges ? { badges } : {}),
+    ...(tools ? { tools } : {}),
+    ...(settings ? { settings } : {}),
+  };
 }
 
 /** שיעור מקומי גובר על אותו מזהה בענן — כדי לא למחוק עריכה. */
@@ -111,7 +151,7 @@ export function fillMissingLessons(existing: Lesson[], drafts: Lesson[]): Lesson
   return [...existing, ...drafts.filter((d) => !haveId.has(d.id) && !haveCap.has(d.capabilityId))];
 }
 
-export function normalizeContent<T extends Pick<AppData, "capabilities" | "lessons">>(data: T): T {
+export function normalizeContent<T extends Pick<AppData, "capabilities" | "lessons"> & Partial<Pick<AppData, "meetings" | "badges" | "settings" | "tools">>>(data: T): T {
   const cleaned = dropUnwantedContent(data);
   const seed = createSeed();
   const capabilities = fillMissingCaps(cleaned.capabilities, seed.capabilities);

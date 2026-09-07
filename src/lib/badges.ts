@@ -2,9 +2,9 @@ import type { AppData, BadgeDef, BadgeMetric, CapabilityResponse } from "./types
 
 export const METRIC_OPTIONS: { id: BadgeMetric; label: string; template: string }[] = [
   { id: "wantToLearn", label: "רוצה ללמוד", template: "סימנת {current} מתוך {target} תחומים" },
-  { id: "mastered", label: "שולטת", template: "שולטת ב־{current} מתוך {target} יכולות" },
+  { id: "mastered", label: "שולט", template: "שולט ב־{current} מתוך {target} יכולות" },
   { id: "hasProduct", label: "תוצרים", template: "העלית {current} מתוך {target} תוצרים" },
-  { id: "readyToTeach", label: "מלמדת", template: "מוכנה ללמד {current} מתוך {target} יכולות" },
+  { id: "readyToTeach", label: "מלמד", template: "מוכן ללמד {current} מתוך {target} יכולות" },
   { id: "savedForLater", label: "שמור להמשך", template: "שמרת {current} מתוך {target} פריטים" },
   { id: "completedLearning", label: "שיעורים", template: "השלמת {current} מתוך {target} שיעורים" },
   { id: "anyMarked", label: "מילוי טופס", template: "מילאת את הטופס — {current} מתוך {target}" },

@@ -66,10 +66,10 @@ export function capabilityInsights(data: AppData): CapInsight[] {
       let suggest = "עוד אין מספיק סימונים.";
       if (want.length && howCounts[topHow] > 0) {
         suggest = `כדאי ללמד ב־${LEARN_HOW_LABEL[topHow]} (${howCounts[topHow]} מורות).`;
-        if (topHow === "one_on_one" && teach.length) suggest += ` יש ${teach.length} מוכנות ללמד — אפשר לשדך.`;
-        if (topHow === "one_on_one" && !teach.length) suggest += " אין עדיין מלמדות — כדאי מפגש צוות או סרטון.";
+        if (topHow === "one_on_one" && teach.length) suggest += ` יש ${teach.length} מוכנים ללמד — אפשר לשדך.`;
+        if (topHow === "one_on_one" && !teach.length) suggest += " אין עדיין מלמדים — כדאי מפגש צוות או סרטון.";
       } else if (teach.length) {
-        suggest = `${teach.length} מוכנות ללמד. אפשר לשדך למורות שירצו.`;
+        suggest = `${teach.length} מוכנים ללמד. אפשר לשדך למורות שירצו.`;
       }
       return {
         cap,

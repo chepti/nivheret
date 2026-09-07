@@ -40,7 +40,7 @@ export function Checklist() {
     return data.capabilities
       .map((c) => {
         const n = data.responses.filter((r) => r.capabilityId === c.id && r.readyToTeach).length;
-        return n > 0 ? `${n} מורות מוכנות ללמד ${c.title}` : null;
+        return n > 0 ? `${n} מוכנים ללמד ${c.title}` : null;
       })
       .filter(Boolean)
       .slice(0, 3) as string[];
@@ -52,7 +52,7 @@ export function Checklist() {
     <div>
       {savedFlash && <div className="toast-save">נשמר</div>}
       <h1>הצ׳קליסט שלי</h1>
-      <p>לחצי על יכולת, סמני, ועברי הלאה — נשמר לבד.</p>
+      <p>לחצו על יכולת, סמנו, ועברו הלאה — נשמר לבד.</p>
 
       {data.periods.map((period) => {
         const periodTools = data.tools.filter((t) => t.periodId === period.id).sort((a, b) => a.order - b.order);
@@ -121,7 +121,7 @@ export function Checklist() {
                               )}
                               <label className="check-row">
                                 <input type="checkbox" checked={r.mastered} onChange={(e) => { upsertResponse({ capabilityId: cap.id, mastered: e.target.checked }); flash(); }} />
-                                כבר שולטת
+                                כבר שולט
                               </label>
                               <label className="check-row">
                                 <input
@@ -142,7 +142,7 @@ export function Checklist() {
                               )}
                               <label className="check-row">
                                 <input type="checkbox" checked={r.readyToTeach} onChange={(e) => { upsertResponse({ capabilityId: cap.id, readyToTeach: e.target.checked }); flash(); }} />
-                                מוכנה ללמד עמיתה 1:1
+                                מוכן ללמד עמית 1:1
                               </label>
                               {myPairList.filter((p) => p.capabilityId === cap.id).map((p) => {
                                 const me = session!.teacherId.toLowerCase();

@@ -23,9 +23,9 @@ export const STATUS_META: Record<
 > = {
   empty: { label: "טרם סומן", color: "#9aa3ad", soft: "#eef1f4" },
   want: { label: "רוצה ללמוד", color: "#e8a317", soft: "#fff3d1" },
-  mastered: { label: "שולטת", color: "#2bb39a", soft: "#d9f5ef" },
+  mastered: { label: "שולט", color: "#2bb39a", soft: "#d9f5ef" },
   product: { label: "יש תוצר", color: "#7b61ff", soft: "#ebe6ff" },
-  teach: { label: "מלמדת", color: "#5b7cfa", soft: "#e8eeff" },
+  teach: { label: "מלמד", color: "#5b7cfa", soft: "#e8eeff" },
 };
 
 export function emptyResponse(teacherId: string, capabilityId: string): CapabilityResponse {

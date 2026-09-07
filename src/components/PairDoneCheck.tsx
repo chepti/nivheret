@@ -3,7 +3,7 @@ import type { Pair } from "../lib/leadership";
 
 export function PairDoneCheck({ pair, label }: { pair: Pair; label?: string }) {
   const { upsertPair } = useStore();
-  const text = label ?? (pair.done ? "בוצע ✓" : "סמני שבוצע");
+  const text = label ?? (pair.done ? "בוצע ✓" : "סמנו שבוצע");
   return (
     <label className="check-row pair-done">
       <input

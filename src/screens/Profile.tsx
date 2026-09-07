@@ -61,7 +61,7 @@ export function Profile() {
           {pairs.map((p) => {
             const me = session.teacherId.toLowerCase();
             const other = p.learnerId.toLowerCase() === me ? p.mentorName : p.learnerName;
-            const role = p.learnerId.toLowerCase() === me ? "לומדת עם" : "מלמדת את";
+            const role = p.learnerId.toLowerCase() === me ? "לומד עם" : "מלמד את";
             return (
               <div key={p.id} className="profile-item">
                 <div className="cap-line-text">
@@ -101,7 +101,7 @@ export function Profile() {
         })}
         {learn.length > 3 && (
           <button className="pill btn-primary" onClick={() => setShowAllLearn((v) => !v)}>
-            {showAllLearn ? "הצגי פחות" : `הצגי עוד (${learn.length - 3})`}
+            {showAllLearn ? "הציגו פחות" : `הציגו עוד (${learn.length - 3})`}
           </button>
         )}
       </section>
@@ -130,7 +130,7 @@ export function Profile() {
         })}
         {saved.length > 3 && (
           <button className="pill btn-primary" onClick={() => setShowAllSaved((v) => !v)}>
-            {showAllSaved ? "הצגי פחות" : "הצגי את כל הפריטים ללמידה"}
+            {showAllSaved ? "הציגו פחות" : "הציגו את כל הפריטים ללמידה"}
           </button>
         )}
       </section>

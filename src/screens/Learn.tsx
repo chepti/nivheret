@@ -86,7 +86,7 @@ export function Learn({ route }: { route: Route }) {
           </div>
         ))}
         <div className="row" style={{ marginTop: 14 }}>
-          <button className="pill btn-ink" onClick={checkQuiz}>בדקי אותי</button>
+          <button className="pill btn-ink" onClick={checkQuiz}>בדקו אותי</button>
           <button className="pill btn-primary" onClick={() => upsertResponse({ capabilityId: lesson.capabilityId, savedForLater: !resp.savedForLater })}>
             <Bookmark size={16} /> {resp.savedForLater ? "שמור להמשך ✓" : "שמור ללמידה בהמשך"}
           </button>
@@ -95,7 +95,7 @@ export function Learn({ route }: { route: Route }) {
         {quizOk[lesson.id] === false && (
           <div>
             <p>עוד לא מדויק. אפשר לנסות שוב או לסמן השלמה ידנית.</p>
-            <button className="pill btn-yellow" onClick={() => upsertResponse({ capabilityId: lesson.capabilityId, completedLearning: true })}>סמני השלמה</button>
+            <button className="pill btn-yellow" onClick={() => upsertResponse({ capabilityId: lesson.capabilityId, completedLearning: true })}>סמנו השלמה</button>
           </div>
         )}
         {celebrate && <div className="toast-save dopamine"><PartyPopper size={16} /> כל הכבוד!</div>}
@@ -122,6 +122,8 @@ export function Learn({ route }: { route: Route }) {
           />
           <ImagePaste
             value={reaction?.productImage}
+            maxEdge={640}
+            forceJpeg
             onChange={(dataUrl) => upsertReaction({ capabilityId: lesson.capabilityId, productImage: dataUrl })}
           />
         </div>

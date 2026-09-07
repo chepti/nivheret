@@ -46,7 +46,7 @@ export function Who() {
   return (
     <div>
       <button className="small muted" onClick={() => navigate("welcome")}>חזרה למוסד</button>
-      <h1 style={{ marginTop: 8 }}>מי את?</h1>
+      <h1 style={{ marginTop: 8 }}>שלום, מי כאן?</h1>
       <p>אפשר להיכנס עם חשבון גוגל, או לזהות את עצמך בלי סיסמה.</p>
       <div className="clay" style={{ padding: 20, margin: "16px 0" }}>
         <GoogleSignButton after={() => navigate("checklist")} />
@@ -68,7 +68,7 @@ export function Who() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          {email && !byEmail && <p className="small">המייל לא נמצא בספר המורות. נסי חיפוש לפי שם.</p>}
+          {email && !byEmail && <p className="small">המייל לא נמצא בספר המורות. נסו חיפוש לפי שם.</p>}
           <button className="pill btn-ink" style={{ marginTop: 14 }} disabled={!byEmail} onClick={() => go(byEmail!.id)}>
             כניסה לטופס
           </button>
@@ -78,11 +78,11 @@ export function Who() {
           <input
             className="field"
             autoFocus
-            placeholder="הקלידי אותיות ראשונות — לדוגמה «חפ» או «בן»"
+            placeholder="הקלידו אותיות ראשונות — לדוגמה «חפ» או «בן»"
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
-          <p className="small">{q ? `${filtered.length} תוצאות` : "הקלידי כדי לסנן את הרשימה"}</p>
+          <p className="small">{q ? `${filtered.length} תוצאות` : "הקלידו כדי לסנן את הרשימה"}</p>
           <ul style={{ listStyle: "none", padding: 0, margin: "8px 0 0" }}>
             {filtered.map((t) => (
               <li key={t.id}>

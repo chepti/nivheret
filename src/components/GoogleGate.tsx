@@ -17,7 +17,7 @@ export function GoogleGate({ children }: { children: ReactNode }) {
     <div className="clay" style={{ padding: 22, textAlign: "center" }}>
       <h2>כניסת גוגל</h2>
       <p>
-        הטופס נפתח בזיהוי פשוט. מכאן והלאה — למידה, פרופיל ומפגשים — נכנסות עם חשבון גוגל
+        הטופס נפתח בזיהוי פשוט. מכאן והלאה — למידה, פרופיל ומפגשים — נכנסים עם חשבון גוגל
         {teacher ? ` (${teacher.email})` : ""}.
       </p>
       {!firebaseOn && (

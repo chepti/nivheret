@@ -1,6 +1,6 @@
 import { useRef, useState, type ClipboardEvent, type DragEvent } from "react";
 
-function shrink(dataUrl: string, maxEdge: number, square: boolean, asPng: boolean, onDone: (out: string) => void) {
+function shrink(dataUrl: string, maxEdge: number, square: boolean, asPng: boolean, quality: number, onDone: (out: string) => void) {
   const img = new Image();
   img.onload = () => {
     const canvas = document.createElement("canvas");
@@ -28,7 +28,7 @@ function shrink(dataUrl: string, maxEdge: number, square: boolean, asPng: boolea
       }
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     }
-    onDone(asPng ? canvas.toDataURL("image/png") : canvas.toDataURL("image/jpeg", 0.7));
+    onDone(asPng ? canvas.toDataURL("image/png") : canvas.toDataURL("image/jpeg", quality));
   };
   img.src = dataUrl;
 }
@@ -37,13 +37,13 @@ function keepAlpha(file: File): boolean {
   return file.type === "image/png" || file.type === "image/webp" || file.name.toLowerCase().endsWith(".png");
 }
 
-function readFile(file: File, maxEdge: number | undefined, square: boolean, onDone: (dataUrl: string) => void) {
+function readFile(file: File, maxEdge: number | undefined, square: boolean, forceJpeg: boolean, onDone: (dataUrl: string) => void) {
   if (!file.type.startsWith("image/")) return;
-  const asPng = keepAlpha(file);
+  const asPng = !forceJpeg && keepAlpha(file);
   const reader = new FileReader();
   reader.onload = () => {
     const raw = String(reader.result);
-    if (maxEdge) shrink(raw, maxEdge, square, asPng, onDone);
+    if (maxEdge) shrink(raw, maxEdge, square, asPng, 0.55, onDone);
     else onDone(raw);
   };
   reader.readAsDataURL(file);
@@ -52,22 +52,24 @@ function readFile(file: File, maxEdge: number | undefined, square: boolean, onDo
 export function ImagePaste({
   value,
   onChange,
-  hint = "לחצי בתיבה, ואז הדביקי עם Ctrl+V — או גררי תמונה",
+  hint = "לחצו בתיבה, ואז הדביקו עם Ctrl+V — או גררו תמונה",
   maxEdge,
   square = false,
+  forceJpeg = false,
 }: {
   value?: string;
   onChange: (dataUrl: string) => void;
   hint?: string;
   maxEdge?: number;
   square?: boolean;
+  forceJpeg?: boolean;
 }) {
   const [over, setOver] = useState(false);
   const [ready, setReady] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const take = (file: File) => readFile(file, maxEdge, square, onChange);
+  const take = (file: File) => readFile(file, maxEdge, square, forceJpeg, onChange);
 
   const fromClipboard = (e: ClipboardEvent) => {
     const items = e.clipboardData?.items;
@@ -114,7 +116,7 @@ export function ImagePaste({
           fileRef.current?.click();
         }}
       >
-        או בחרי קובץ
+        או בחרו קובץ
       </button>
       <input
         ref={fileRef}

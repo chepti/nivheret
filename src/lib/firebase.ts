@@ -65,9 +65,9 @@ export function googleErrorMessage(err: unknown): string {
   if (code.includes("unauthorized-domain")) {
     return "הדומיין לא מורשה ב־Firebase. צריך להוסיף nivheret.web.app ו־localhost ברשימת Authorized domains.";
   }
-  if (code.includes("popup-blocked")) return "הדפדפן חסם את חלון גוגל. נסי שוב, או תרשי חלונות קופצים.";
-  if (code.includes("popup-closed")) return "חלון גוגל נסגר לפני סיום הכניסה. נסי שוב.";
-  if (code.includes("network-request-failed")) return "אין חיבור יציב לגוגל. בדקי את הרשת ונסי שוב.";
+  if (code.includes("popup-blocked")) return "הדפדפן חסם את חלון גוגל. נסו שוב, או תרשו חלונות קופצים.";
+  if (code.includes("popup-closed")) return "חלון גוגל נסגר לפני סיום הכניסה. נסו שוב.";
+  if (code.includes("network-request-failed")) return "אין חיבור יציב לגוגל. בדקו את הרשת ונסו שוב.";
   if (code.includes("operation-not-allowed")) return "כניסת גוגל עדיין לא הופעלה בפרויקט Firebase.";
   return "לא הצלחנו להתחבר לגוגל.";
 }

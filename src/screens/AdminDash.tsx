@@ -98,7 +98,7 @@ export function AdminDash() {
                     <span className="small muted"> {row.toolName}</span>
                   </span>
                   <span className="small muted">
-                    {row.want.length} לומדות · {row.teach.length} מלמדות · {row.product.length} תוצרים
+                    {row.want.length} לומדים · {row.teach.length} מלמדים · {row.product.length} תוצרים
                   </span>
                 </button>
                 <p className="small compact-hint">{row.suggest}</p>
@@ -113,10 +113,10 @@ export function AdminDash() {
                       </p>
                     )}
                     {!!row.want.length && (
-                      <p className="small"><strong>לומדות: </strong>{row.want.map((w) => `${w.name}${w.how ? ` (${LEARN_HOW_LABEL[w.how]})` : ""}`).join(" · ")}</p>
+                      <p className="small"><strong>לומדים: </strong>{row.want.map((w) => `${w.name}${w.how ? ` (${LEARN_HOW_LABEL[w.how]})` : ""}`).join(" · ")}</p>
                     )}
                     {!!row.teach.length && (
-                      <p className="small"><strong>מלמדות: </strong>{row.teach.map((t) => t.name).join(" · ")}</p>
+                      <p className="small"><strong>מלמדים: </strong>{row.teach.map((t) => t.name).join(" · ")}</p>
                     )}
                     {!!row.product.length && (
                       <p className="small">
@@ -157,8 +157,8 @@ export function AdminDash() {
 
       {tab === "pairs" && (
         <section>
-          <p className="small">צמד = לומדת + מלמדת. גם המורות יכולות לסמן בצ׳קליסט ובפרופיל שזה קרה.</p>
-          {!pairing.pairs.length && <p>אין עדיין גם «רוצה ללמוד» וגם «מלמדת» על אותה יכולת.</p>}
+          <p className="small">צמד = לומד + מלמד. גם המורות יכולות לסמן בצ׳קליסט ובפרופיל שזה קרה.</p>
+          {!pairing.pairs.length && <p>אין עדיין גם «רוצה ללמוד» וגם «מלמד» על אותה יכולת.</p>}
           {!!openPairs.length && (
             <div className="clay compact-card">
               {openPairs.map((p) => (
@@ -175,7 +175,7 @@ export function AdminDash() {
                     onClick={() => openMail(
                       [teacherEmail(data, p.learnerId), teacherEmail(data, p.mentorId)],
                       `צמד למידה: ${p.capabilityTitle}`,
-                      `שלום ${p.learnerName} ו${p.mentorName},\n\nחשבנו על צמד למידה משותפת ביכולת «${p.capabilityTitle}».\n${p.mentorName} — מוכנה ללמד.\n${p.learnerName} — רוצה ללמוד.\n\nתאמו ביניכן מועד קצר 1:1.\n\nנבחרת`,
+                      `שלום ${p.learnerName} ו${p.mentorName},\n\nחשבנו על צמד למידה משותפת ביכולת «${p.capabilityTitle}».\n${p.mentorName} — מוכן ללמד.\n${p.learnerName} — רוצה ללמוד.\n\nתאמו ביניכם מועד קצר 1:1.\n\nנבחרת`,
                     )}
                   >
                     מייל
@@ -202,7 +202,7 @@ export function AdminDash() {
           )}
           {!!pairing.unmatched.length && (
             <div className="clay compact-card" style={{ marginTop: 10 }}>
-              <div className="small muted" style={{ marginBottom: 6 }}>מחכות למלמדת</div>
+              <div className="small muted" style={{ marginBottom: 6 }}>מחכים למלמד</div>
               {pairing.unmatched.map((u, i) => (
                 <div key={`${u.name}-${i}`} className="pair-row">
                   <span>{u.name}</span>

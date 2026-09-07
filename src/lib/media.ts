@@ -19,7 +19,7 @@ function shrinkDataUrl(dataUrl: string, maxEdge: number, asPng: boolean): Promis
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      resolve(asPng ? canvas.toDataURL("image/png") : canvas.toDataURL("image/jpeg", 0.78));
+      resolve(asPng ? canvas.toDataURL("image/png") : canvas.toDataURL("image/jpeg", 0.62));
     };
     img.onerror = () => resolve(dataUrl);
     img.src = dataUrl;
@@ -43,7 +43,7 @@ export async function prepareLessonImage(file: File): Promise<string> {
     reader.onerror = () => reject(new Error("קריאת התמונה נכשלה"));
     reader.readAsDataURL(file);
   });
-  return shrinkDataUrl(raw, 1200, asPng);
+  return shrinkDataUrl(raw, 800, asPng);
 }
 
 export async function uploadLessonImage(lessonId: string, dataUrl: string): Promise<string> {

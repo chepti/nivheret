@@ -146,7 +146,7 @@ export function Cms() {
 
           {node.kind === "home" && (
             <div className="cms-home">
-              <p>בחרי תקופה בעץ, ואז כלי — משם עורכים יכולות ושיעורים. כל שינוי נשמר לבד.</p>
+              <p>בחרו תקופה בעץ, ואז כלי — משם עורכים יכולות ושיעורים. כל שינוי נשמר לבד.</p>
               <div className="grid-tools">
                 {data.periods.map((p) => (
                   <button key={p.id} className="clay cms-card" onClick={() => { setOpenPeriod(p.id); setNode({ kind: "period", id: p.id }); }}>
@@ -210,7 +210,8 @@ export function Cms() {
                       <Field label="תמונה 1×1">
                         <ImagePaste
                           square
-                          maxEdge={200}
+                          forceJpeg
+                          maxEdge={144}
                           value={tool.image}
                           hint="Ctrl+V או קובץ"
                           onChange={(image) => {
@@ -231,7 +232,7 @@ export function Cms() {
 
               {node.tab === "caps" && (
                 <>
-                  <p className="small">גררי את הידית כדי לשנות את סדר היכולות בצ׳קליסט.</p>
+                  <p className="small">גררו את הידית כדי לשנות את סדר היכולות בצ׳קליסט.</p>
                   {data.capabilities
                     .filter((c) => c.toolId === tool.id)
                     .slice()
@@ -284,7 +285,8 @@ export function Cms() {
                             <Field label="תמונה 1×1">
                               <ImagePaste
                                 square
-                                maxEdge={200}
+                                forceJpeg
+                                maxEdge={144}
                                 value={c.image}
                                 hint="Ctrl+V או קובץ"
                                 onChange={(image) => {
@@ -370,7 +372,7 @@ export function Cms() {
                                           type="button"
                                           className={`cms-ans-mark ${correct ? "on" : ""}`}
                                           onClick={() => patchQuiz(l.id, qi, { correctIndex: oi })}
-                                          title="סמני כתשובה הנכונה"
+                                          title="סמנו כתשובה הנכונה"
                                         >
                                           {correct ? "נכונה" : oi + 1}
                                         </button>
@@ -485,8 +487,8 @@ export function Cms() {
                 <Field label="תמונת באדג׳ (PNG שקוף)">
                   <ImagePaste
                     value={b.image}
-                    maxEdge={240}
-                    hint="לחצי בתיבה ואז Ctrl+V, או גררי PNG. הרקע נשאר שקוף."
+                    maxEdge={160}
+                    hint="לחצו בתיבה ואז Ctrl+V, או גררו PNG. הרקע נשאר שקוף."
                     onChange={(image) => {
                       if (!image) {
                         patchBadge(b.id, { image: undefined });
@@ -519,7 +521,7 @@ export function Cms() {
   );
 
   function titleOf(n: Node): string {
-    if (n.kind === "home") return "בחרי איפה לערוך";
+    if (n.kind === "home") return "בחרו איפה לערוך";
     if (n.kind === "period") return data.periods.find((p) => p.id === n.id)?.name ?? "";
     if (n.kind === "tool") return data.tools.find((t) => t.id === n.id)?.name ?? "";
     if (n.kind === "meetings") return "מפגשי צוות";

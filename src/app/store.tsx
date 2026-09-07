@@ -149,21 +149,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           const remoteClean = normalizeContent({
             capabilities: unionCapabilities(local.capabilities ?? [], remote.capabilities ?? []),
             lessons: unionLessons(local.lessons ?? [], remote.lessons ?? []),
+            meetings: remote.meetings ?? local.meetings,
+            badges: remote.badges ?? local.badges,
+            tools: remote.tools ?? local.tools,
+            settings: remote.settings ?? local.settings,
           });
           const stripped =
             JSON.stringify(remote.capabilities ?? []) !== JSON.stringify(remoteClean.capabilities) ||
-            JSON.stringify(remote.lessons ?? []) !== JSON.stringify(remoteClean.lessons);
+            JSON.stringify(remote.lessons ?? []) !== JSON.stringify(remoteClean.lessons) ||
+            JSON.stringify(remote.meetings ?? []) !== JSON.stringify(remoteClean.meetings ?? []) ||
+            JSON.stringify(remote.badges ?? []) !== JSON.stringify(remoteClean.badges ?? []) ||
+            JSON.stringify(remote.settings?.praiseNote) !== JSON.stringify(remoteClean.settings?.praiseNote);
           setDataState((prev) => ({
             ...(recovered ?? prev),
             ...(keepLocalContent ? {} : remote),
             teachers: remote.teachers?.length ? remote.teachers : prev.teachers,
-            badges: (keepLocalContent ? prev.badges : remote.badges ?? prev.badges).map(normalizeBadge),
+            badges: (keepLocalContent ? prev.badges : remoteClean.badges ?? remote.badges ?? prev.badges).map(normalizeBadge),
             responses: mergeResponses(prev.responses, remote.responses ?? []),
             rsvps: remote.rsvps ?? prev.rsvps,
             reactions: remote.reactions ?? prev.reactions,
             pairs: remote.pairs ?? prev.pairs,
             capabilities: keepLocalContent ? recovered!.capabilities : remoteClean.capabilities,
             lessons: keepLocalContent ? recovered!.lessons : remoteClean.lessons,
+            meetings: keepLocalContent ? recovered!.meetings : remoteClean.meetings ?? remote.meetings ?? prev.meetings,
+            tools: keepLocalContent ? recovered!.tools : remoteClean.tools ?? remote.tools ?? prev.tools,
           }));
           if (stripped && !recovered) {
             skipRemoteContent.current = true;
@@ -213,7 +222,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             if (incoming.capabilities) {
               next.capabilities = unionCapabilities(prev.capabilities, incoming.capabilities);
             }
-            return incoming.capabilities || incoming.lessons ? dropUnwantedContent(next) : next;
+            return dropUnwantedContent(next);
           });
         });
       } catch (err) {

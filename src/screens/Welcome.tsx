@@ -18,7 +18,7 @@ export function Welcome() {
       <p>למידה צוותית · יכולות דיגיטליות · מפגשים</p>
       <div className="clay" style={{ padding: 22, marginTop: 22, textAlign: "right" }}>
         <h2>בחירת סמל מוסד</h2>
-        <p className="small">בחרי מהרשימה או הקלידי את הסמל.</p>
+        <p className="small">בחרו מהרשימה או הקלידו את הסמל.</p>
         <select className="field" value={symbol} onChange={(e) => setSymbol(e.target.value)} style={{ marginBottom: 12 }}>
           {data.institutions.map((i) => (
             <option key={i.id} value={i.symbol}>{i.symbol} · {i.name}</option>

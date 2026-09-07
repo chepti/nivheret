@@ -37,11 +37,12 @@ export function ProductDrawer({
           </div>
           <button className="pill btn-primary small" onClick={onClose}><X size={16} /> סגירה</button>
         </div>
-        <p className="small">העלי או הדביקי תמונה, ואפשר גם קישור לשיתוף. נשמר לבד.</p>
+        <p className="small">העלו או הדביקו תמונה, ואפשר גם קישור לשיתוף. נשמר לבד.</p>
         <ImagePaste
           value={reaction?.productImage}
-          maxEdge={720}
-          hint="לחצי בתיבה ואז Ctrl+V, או גררי תמונה"
+          maxEdge={640}
+          forceJpeg
+          hint="לחצו בתיבה ואז Ctrl+V, או גררו תמונה"
           onChange={(productImage) => upsertReaction({ capabilityId, productImage: productImage || undefined })}
         />
         <label className="cms-field" style={{ marginTop: 12 }}>

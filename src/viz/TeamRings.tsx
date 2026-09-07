@@ -63,7 +63,7 @@ export function TeamRings() {
               </div>
             </div>
             <strong>{t.firstName} {t.lastName}</strong>
-            <div className="small muted">{mastered} שולטת · {parts.want} רוצה ללמוד</div>
+            <div className="small muted">{mastered} שולט · {parts.want} רוצה ללמוד</div>
             {open === t.id && (
               <div className="small" style={{ marginTop: 8, textAlign: "right" }}>
                 {KEYS.map((k) => (
