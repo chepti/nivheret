@@ -299,12 +299,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const teacher = data.teachers.find((t) => t.id === session?.teacherId);
+  const googleOk = Boolean(session?.googleLinked);
   const isAdmin = Boolean(
     session &&
+      googleOk &&
       (teacher?.role === "admin" ||
         data.settings.adminEmails.includes(session.email.toLowerCase())),
   );
-  const isAuthedBeyondForm = Boolean(session?.googleLinked || isAdmin);
+  const isAuthedBeyondForm = googleOk || (!firebaseEnabled() && Boolean(session));
 
   const enterForm = (institutionId: string, t: Teacher) => {
     const next: Session = {
@@ -366,22 +368,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const linkGoogle: Store["linkGoogle"] = async () => {
-    if (!firebaseEnabled()) {
-      if (!session) return null;
-      const next = { ...session, googleLinked: true };
-      setSessionState(next);
-      saveSession(next);
-      return session.email;
-    }
+    if (!firebaseEnabled()) return session?.email ?? null;
     const email = await signInWithGoogle();
     if (!email) return null;
     if (applyGoogleEmail(email)) return email;
-    if (session) {
-      const next = { ...session, googleLinked: true };
-      setSessionState(next);
-      saveSession(next);
-      return email;
-    }
     return null;
   };
 

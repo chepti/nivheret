@@ -4,7 +4,7 @@ import { useStore } from "../app/store";
 import { GoogleSignButton } from "./GoogleSignButton";
 
 export function GoogleGate({ children }: { children: ReactNode }) {
-  const { session, isAuthedBeyondForm, firebaseOn, teacher } = useStore();
+  const { session, isAuthedBeyondForm, teacher } = useStore();
 
   useEffect(() => {
     if (!session) navigate("welcome");
@@ -17,12 +17,9 @@ export function GoogleGate({ children }: { children: ReactNode }) {
     <div className="clay" style={{ padding: 22, textAlign: "center" }}>
       <h2>כניסת גוגל</h2>
       <p>
-        הטופס נפתח בזיהוי פשוט. מכאן והלאה — למידה, פרופיל ומפגשים — נכנסים עם חשבון גוגל
+        הזיהוי מהרשימה או מהמייל מספיק לטופס. למידה, פרופיל, מפגשים, הנהלה ותוכן — רק עם חשבון גוגל
         {teacher ? ` (${teacher.email})` : ""}.
       </p>
-      {!firebaseOn && (
-        <p className="small">אפשר להמשיך עם המייל שזיהית.</p>
-      )}
       <div style={{ display: "flex", justifyContent: "center" }}>
         <GoogleSignButton />
       </div>

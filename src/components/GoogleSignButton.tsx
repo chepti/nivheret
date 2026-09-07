@@ -46,7 +46,7 @@ export function GoogleSignButton({
         }}
       >
         <GoogleMark />
-        {busy ? "מתחברת לגוגל…" : label}
+        {busy ? "מתחברים לגוגל…" : label}
       </button>
       {err && <p className="small" style={{ color: "#c0392b", marginTop: 10 }}>{err}</p>}
     </div>

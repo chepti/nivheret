@@ -47,7 +47,7 @@ export function Who() {
     <div>
       <button className="small muted" onClick={() => navigate("welcome")}>חזרה למוסד</button>
       <h1 style={{ marginTop: 8 }}>שלום, מי כאן?</h1>
-      <p>אפשר להיכנס עם חשבון גוגל, או לזהות את עצמך בלי סיסמה.</p>
+      <p>הטופס נפתח בזיהוי קל. ללמידה, הנהלה ותוכן — רק כניסה עם חשבון גוגל.</p>
       <div className="clay" style={{ padding: 20, margin: "16px 0" }}>
         <GoogleSignButton after={() => navigate("checklist")} />
         <p className="small" style={{ margin: "12px 0 0" }}>מתאים לחשבון האולפנה או ל־Gmail שמופיע בספר המורות.</p>
