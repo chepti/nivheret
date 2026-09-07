@@ -1,11 +1,31 @@
-import { useRef, useState, type ClipboardEvent, type DragEvent } from "react";
+import { useEffect, useRef, useState, type ClipboardEvent, type DragEvent } from "react";
 
-function shrink(dataUrl: string, maxEdge: number, square: boolean, asPng: boolean, quality: number, onDone: (out: string) => void) {
+function isImageFile(file: File): boolean {
+  if (file.type.startsWith("image/")) return true;
+  return /\.(png|jpe?g|gif|webp|bmp)$/i.test(file.name);
+}
+
+function keepAlpha(file: File): boolean {
+  return file.type === "image/png" || file.type === "image/webp" || file.name.toLowerCase().endsWith(".png");
+}
+
+function shrink(
+  dataUrl: string,
+  maxEdge: number,
+  square: boolean,
+  asPng: boolean,
+  quality: number,
+  onDone: (out: string) => void,
+  onFail: () => void,
+) {
   const img = new Image();
   img.onload = () => {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!ctx) {
+      onFail();
+      return;
+    }
     if (square) {
       const side = Math.min(img.width, img.height);
       const sx = (img.width - side) / 2;
@@ -30,22 +50,30 @@ function shrink(dataUrl: string, maxEdge: number, square: boolean, asPng: boolea
     }
     onDone(asPng ? canvas.toDataURL("image/png") : canvas.toDataURL("image/jpeg", quality));
   };
+  img.onerror = () => onFail();
   img.src = dataUrl;
 }
 
-function keepAlpha(file: File): boolean {
-  return file.type === "image/png" || file.type === "image/webp" || file.name.toLowerCase().endsWith(".png");
-}
-
-function readFile(file: File, maxEdge: number | undefined, square: boolean, forceJpeg: boolean, onDone: (dataUrl: string) => void) {
-  if (!file.type.startsWith("image/")) return;
+function readFile(
+  file: File,
+  maxEdge: number | undefined,
+  square: boolean,
+  forceJpeg: boolean,
+  onDone: (dataUrl: string) => void,
+  onFail: () => void,
+) {
+  if (!isImageFile(file)) {
+    onFail();
+    return;
+  }
   const asPng = !forceJpeg && keepAlpha(file);
   const reader = new FileReader();
   reader.onload = () => {
     const raw = String(reader.result);
-    if (maxEdge) shrink(raw, maxEdge, square, asPng, 0.55, onDone);
+    if (maxEdge) shrink(raw, maxEdge, square, asPng, 0.55, onDone, onFail);
     else onDone(raw);
   };
+  reader.onerror = () => onFail();
   reader.readAsDataURL(file);
 }
 
@@ -56,6 +84,7 @@ export function ImagePaste({
   maxEdge,
   square = false,
   forceJpeg = false,
+  upload,
 }: {
   value?: string;
   onChange: (dataUrl: string) => void;
@@ -63,13 +92,60 @@ export function ImagePaste({
   maxEdge?: number;
   square?: boolean;
   forceJpeg?: boolean;
+  upload?: (dataUrl: string) => Promise<string>;
 }) {
   const [over, setOver] = useState(false);
-  const [ready, setReady] = useState(false);
+  const [preview, setPreview] = useState(value ?? "");
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
   const boxRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const gen = useRef(0);
 
-  const take = (file: File) => readFile(file, maxEdge, square, forceJpeg, onChange);
+  useEffect(() => {
+    if (!busy) setPreview(value ?? "");
+  }, [value, busy]);
+
+  const take = (file: File) => {
+    const token = ++gen.current;
+    setBusy(true);
+    setNote("מכינים תמונה…");
+    readFile(
+      file,
+      maxEdge,
+      square,
+      forceJpeg,
+      (dataUrl) => {
+        if (token !== gen.current) return;
+        setPreview(dataUrl);
+        if (!upload) {
+          onChange(dataUrl);
+          setBusy(false);
+          setNote("נשמרה");
+          return;
+        }
+        setNote("מעלה…");
+        void upload(dataUrl)
+          .then((url) => {
+            if (token !== gen.current) return;
+            setPreview(url);
+            onChange(url);
+            setBusy(false);
+            setNote("נשמרה");
+          })
+          .catch(() => {
+            if (token !== gen.current) return;
+            setBusy(false);
+            setNote("ההעלאה נכשלה. נסו שוב.");
+          });
+      },
+      () => {
+        if (token !== gen.current) return;
+        setBusy(false);
+        setNote("לא הצלחנו לקרוא את התמונה. נסו PNG או JPG.");
+      },
+    );
+  };
 
   const fromClipboard = (e: ClipboardEvent) => {
     const items = e.clipboardData?.items;
@@ -85,17 +161,13 @@ export function ImagePaste({
     }
   };
 
+  const shown = preview || value || "";
+
   return (
     <div
       ref={boxRef}
-      className={`paste-box ${over ? "over" : ""} ${ready ? "ready" : ""}`}
+      className={`paste-box ${over ? "over" : ""} ${busy ? "busy" : ""}`}
       tabIndex={0}
-      onClick={() => {
-        boxRef.current?.focus();
-        setReady(true);
-      }}
-      onFocus={() => setReady(true)}
-      onBlur={() => setReady(false)}
       onPaste={fromClipboard}
       onDragOver={(e) => { e.preventDefault(); setOver(true); }}
       onDragLeave={() => setOver(false)}
@@ -106,22 +178,22 @@ export function ImagePaste({
         if (file) take(file);
       }}
     >
-      <p className="small" style={{ margin: 0 }}>{ready ? "אפשר להדביק עכשיו (Ctrl+V)" : hint}</p>
+      <p className="small" style={{ margin: 0, color: note.startsWith("ה") || note.startsWith("לא") ? "#c0392b" : undefined }}>
+        {busy ? note : note || hint}
+      </p>
       <button
         type="button"
         className="pill btn-primary small"
         style={{ marginTop: 10 }}
-        onClick={(e) => {
-          e.stopPropagation();
-          fileRef.current?.click();
-        }}
+        disabled={busy}
+        onClick={() => fileRef.current?.click()}
       >
-        או בחרו קובץ
+        {busy ? "מעלה…" : "בחירת קובץ"}
       </button>
       <input
         ref={fileRef}
         type="file"
-        accept="image/*"
+        accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp"
         className="sr-only"
         tabIndex={-1}
         onChange={(e) => {
@@ -130,10 +202,23 @@ export function ImagePaste({
           e.target.value = "";
         }}
       />
-      {value && (
+      {shown && (
         <div className="paste-preview">
-          <img alt="" src={value} className={square ? "sq" : ""} />
-          <button type="button" className="small" onClick={(e) => { e.stopPropagation(); onChange(""); }}>הסרת תמונה</button>
+          <img alt="" src={shown} className={square ? "sq" : ""} />
+          <button
+            type="button"
+            className="small"
+            disabled={busy}
+            onClick={() => {
+              gen.current += 1;
+              setPreview("");
+              setNote("");
+              setBusy(false);
+              onChange("");
+            }}
+          >
+            הסרת תמונה
+          </button>
         </div>
       )}
     </div>

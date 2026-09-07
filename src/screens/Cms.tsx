@@ -23,15 +23,15 @@ type Node =
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label className="cms-field">
+    <div className="cms-field">
       <span>{label}</span>
       {children}
-    </label>
+    </div>
   );
 }
 
 export function Cms() {
-  const { data, setData, isAdmin, session, cloudSave } = useStore();
+  const { data, setData, isAdmin, session, cloudSave, syncReady } = useStore();
   const [node, setNode] = useState<Node>({ kind: "home" });
   const [q, setQ] = useState("");
   const [openPeriod, setOpenPeriod] = useState<string | null>("elul-tishrei");
@@ -127,12 +127,14 @@ export function Cms() {
         <div>
           <div className="cms-sticky clay">
             <div>
-              <div className="row" style={{ gap: 8 }}>
+              <div className="row" style={{ gap: 8, alignItems: "center" }}>
                 <div className="small muted">עריכת תוכן</div>
                 <CloudSyncIcon size={18} />
+                <span className="small" style={{ color: cloudSave === "error" ? "#c0392b" : "var(--muted)" }}>
+                  {!syncReady ? "מתחבר…" : cloudSave === "saving" ? "שומר בענן…" : cloudSave === "saved" ? "נשמר בענן" : cloudSave === "error" ? "השמירה נכשלה" : "נשמר לבד"}
+                </span>
               </div>
               <h1 style={{ fontSize: "1.4rem", margin: 0 }}>{titleOf(node)}</h1>
-              {cloudSave === "error" && <div className="small" style={{ color: "#c0392b" }}>השמירה נכשלה — העריכה נשארה במכשיר</div>}
             </div>
             <div className="row">
               {node.kind === "period" && <button className="pill btn-yellow" onClick={() => addTool(node.id)}><Plus size={16} /> כלי לתקופה</button>}
@@ -214,7 +216,8 @@ export function Cms() {
                           maxEdge={144}
                           value={tool.image}
                           hint="Ctrl+V או קובץ"
-                          onChange={(image) => takeCmsImage("tools", tool.id, image, (url) => patchTool(tool.id, { image: url }))}
+                          upload={(img) => uploadCmsImage("tools", tool.id, img)}
+                          onChange={(image) => patchTool(tool.id, { image })}
                         />
                       </Field>
                     </div>
@@ -281,7 +284,8 @@ export function Cms() {
                                 maxEdge={144}
                                 value={c.image}
                                 hint="Ctrl+V או קובץ"
-                                onChange={(image) => takeCmsImage("capabilities", c.id, image, (url) => patchCap(c.id, { image: url }))}
+                                upload={(img) => uploadCmsImage("capabilities", c.id, img)}
+                                onChange={(image) => patchCap(c.id, { image })}
                               />
                             </Field>
                           </div>
@@ -472,8 +476,9 @@ export function Cms() {
                   <ImagePaste
                     value={b.image}
                     maxEdge={160}
-                    hint="לחצו בתיבה ואז Ctrl+V, או גררו PNG. הרקע נשאר שקוף."
-                    onChange={(image) => takeCmsImage("badges", b.id, image, (url) => patchBadge(b.id, { image: url }))}
+                    hint="בחירת קובץ, גרירה או Ctrl+V — PNG שקוף עדיף."
+                    upload={(img) => uploadCmsImage("badges", b.id, img)}
+                    onChange={(image) => patchBadge(b.id, { image })}
                   />
                 </Field>
                 <button className="small" onClick={() => setData((d) => ({ ...d, badges: d.badges.filter((x) => x.id !== b.id) }))}>מחיקת באדג׳</button>
@@ -591,15 +596,6 @@ export function Cms() {
       ...d,
       meetings: [...d.meetings, { id: newId("meet"), title: "מפגש חדש", topic: "צוות", datetime: new Date().toISOString().slice(0, 16), location: "", description: "" }],
     }));
-  }
-  function takeCmsImage(folder: string, id: string, image: string, apply: (url: string) => void) {
-    if (!image) {
-      apply("");
-      return;
-    }
-    void uploadCmsImage(folder, id, image)
-      .then((url) => apply(url))
-      .catch(() => window.alert("העלאת התמונה נכשלה. נסו שוב — היא לא נשמרה כקובץ כבד במסמך."));
   }
   function patchBadge(id: string, patch: Partial<BadgeDef>) {
     setData((d) => ({ ...d, badges: d.badges.map((b) => (b.id === id ? normalizeBadge({ ...b, ...patch }) : b)) }));
