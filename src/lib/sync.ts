@@ -10,7 +10,7 @@ import {
 } from "firebase/firestore";
 import { getFirebase } from "./firebase";
 import { materializeContentImages } from "./media";
-import { unionCapabilities, unionLessons } from "./storage";
+import { unionBadges, unionCapabilities, unionLessons, unionTools } from "./storage";
 import type {
   AppData,
   CapabilityResponse,
@@ -86,6 +86,8 @@ export async function pushContent(data: AppData): Promise<void> {
     ...contentFrom(prepared),
     capabilities: unionCapabilities(prepared.capabilities, remote?.capabilities ?? []),
     lessons: unionLessons(prepared.lessons, remote?.lessons ?? []),
+    tools: unionTools(prepared.tools, remote?.tools ?? []),
+    badges: unionBadges(prepared.badges, remote?.badges ?? []),
   });
 }
 

@@ -10,7 +10,7 @@ import {
 import { earnedBadgeIds, normalizeBadge } from "../lib/badges";
 import { completeGoogleRedirect, firebaseEnabled, signInWithGoogle, signOutGoogle } from "../lib/firebase";
 import { emptyResponse } from "../lib/status";
-import { dropUnwantedContent, loadData, loadSession, normalizeContent, saveData, saveSession, unionCapabilities, unionLessons } from "../lib/storage";
+import { dropUnwantedContent, loadData, loadSession, normalizeContent, saveData, saveSession, unionBadges, unionCapabilities, unionLessons, unionTools } from "../lib/storage";
 import {
   deleteTeacher,
   pullRemote,
@@ -143,6 +143,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 ...local,
                 capabilities: unionCapabilities(local.capabilities ?? [], remote.capabilities ?? []),
                 lessons: unionLessons(local.lessons ?? [], remote.lessons ?? []),
+                tools: unionTools(local.tools ?? [], remote.tools ?? []),
+                badges: unionBadges(local.badges ?? [], remote.badges ?? []),
                 settings: { ...local.settings, contentUpdatedAt: new Date().toISOString() },
               })
             : null;
@@ -150,8 +152,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             capabilities: unionCapabilities(local.capabilities ?? [], remote.capabilities ?? []),
             lessons: unionLessons(local.lessons ?? [], remote.lessons ?? []),
             meetings: remote.meetings ?? local.meetings,
-            badges: remote.badges ?? local.badges,
-            tools: remote.tools ?? local.tools,
+            badges: unionBadges(remote.badges ?? [], local.badges ?? []),
+            tools: unionTools(remote.tools ?? [], local.tools ?? []),
             settings: remote.settings ?? local.settings,
           });
           const stripped =
@@ -164,7 +166,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             ...(recovered ?? prev),
             ...(keepLocalContent ? {} : remote),
             teachers: remote.teachers?.length ? remote.teachers : prev.teachers,
-            badges: (keepLocalContent ? prev.badges : remoteClean.badges ?? remote.badges ?? prev.badges).map(normalizeBadge),
+            badges: (keepLocalContent ? recovered!.badges : remoteClean.badges ?? remote.badges ?? prev.badges).map(normalizeBadge),
             responses: mergeResponses(prev.responses, remote.responses ?? []),
             rsvps: remote.rsvps ?? prev.rsvps,
             reactions: remote.reactions ?? prev.reactions,
@@ -217,10 +219,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 : {}),
             };
             if (incoming.lessons) {
-              next.lessons = unionLessons(prev.lessons, incoming.lessons);
+              next.lessons = unionLessons(incoming.lessons, prev.lessons);
             }
             if (incoming.capabilities) {
-              next.capabilities = unionCapabilities(prev.capabilities, incoming.capabilities);
+              next.capabilities = unionCapabilities(incoming.capabilities, prev.capabilities);
+            }
+            if (incoming.tools) {
+              next.tools = unionTools(incoming.tools, prev.tools);
+            }
+            if (incoming.badges) {
+              next.badges = unionBadges(incoming.badges, prev.badges);
             }
             return dropUnwantedContent(next);
           });

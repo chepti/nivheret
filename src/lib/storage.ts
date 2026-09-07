@@ -1,5 +1,5 @@
 import { createSeed } from "../data/seed";
-import type { AppData, Capability, Lesson, Session } from "./types";
+import type { AppData, BadgeDef, Capability, Lesson, Session, Tool } from "./types";
 import { neutralizeTeacherVoice } from "./voice";
 
 const DATA_KEY = "nivheret-data-v1";
@@ -121,11 +121,17 @@ export function dropUnwantedContent<T extends Pick<AppData, "capabilities" | "le
   };
 }
 
-/** שיעור מקומי גובר על אותו מזהה בענן — כדי לא למחוק עריכה. */
-export function unionById<T extends { id: string }>(local: T[] = [], remote: T[] = []): T[] {
+/** שיעור/יכולת מקומיים גוברים על אותו מזהה בענן — בלי למחוק תמונה שכבר יש. */
+export function keepImage<T extends { image?: string }>(preferred: T, fallback?: T): T {
+  if (preferred.image === "") return preferred;
+  if (preferred.image || !fallback?.image) return preferred;
+  return { ...preferred, image: fallback.image };
+}
+
+export function unionById<T extends { id: string; image?: string }>(preferred: T[] = [], fallback: T[] = []): T[] {
   const map = new Map<string, T>();
-  for (const item of remote) map.set(item.id, item);
-  for (const item of local) map.set(item.id, item);
+  for (const item of fallback) map.set(item.id, item);
+  for (const item of preferred) map.set(item.id, keepImage(item, map.get(item.id)));
   return [...map.values()];
 }
 
@@ -134,6 +140,14 @@ export function unionLessons(local: Lesson[] = [], remote: Lesson[] = []): Lesso
 }
 
 export function unionCapabilities(local: Capability[] = [], remote: Capability[] = []): Capability[] {
+  return unionById(local, remote);
+}
+
+export function unionTools(local: Tool[] = [], remote: Tool[] = []): Tool[] {
+  return unionById(local, remote);
+}
+
+export function unionBadges(local: BadgeDef[] = [], remote: BadgeDef[] = []): BadgeDef[] {
   return unionById(local, remote);
 }
 
@@ -171,7 +185,7 @@ function mergeSeed(saved: AppData | null): AppData {
     institutions: saved.institutions?.length ? saved.institutions : seed.institutions,
     teachers: saved.teachers?.length ? saved.teachers : seed.teachers,
     periods: saved.periods?.length ? saved.periods : seed.periods,
-    tools: saved.tools?.length ? saved.tools : seed.tools,
+    tools: saved.tools?.length ? unionTools(saved.tools, seed.tools) : seed.tools,
     capabilities: fillMissingCaps(saved.capabilities ?? [], seed.capabilities),
     lessons: fillMissingLessons(saved.lessons ?? [], seed.lessons),
     responses: saved.responses ?? [],
@@ -179,7 +193,7 @@ function mergeSeed(saved: AppData | null): AppData {
     meetings: saved.meetings ?? seed.meetings,
     rsvps: saved.rsvps ?? [],
     pairs: saved.pairs ?? [],
-    badges: saved.badges?.length ? saved.badges : seed.badges,
+    badges: saved.badges?.length ? unionBadges(saved.badges, seed.badges) : seed.badges,
     settings: { ...seed.settings, ...saved.settings },
   });
 }

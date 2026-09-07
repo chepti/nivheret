@@ -214,15 +214,7 @@ export function Cms() {
                           maxEdge={144}
                           value={tool.image}
                           hint="Ctrl+V או קובץ"
-                          onChange={(image) => {
-                            if (!image) {
-                              patchTool(tool.id, { image: undefined });
-                              return;
-                            }
-                            void uploadCmsImage("tools", tool.id, image)
-                              .then((url) => patchTool(tool.id, { image: url }))
-                              .catch(() => patchTool(tool.id, { image }));
-                          }}
+                          onChange={(image) => takeCmsImage("tools", tool.id, image, (url) => patchTool(tool.id, { image: url }))}
                         />
                       </Field>
                     </div>
@@ -289,15 +281,7 @@ export function Cms() {
                                 maxEdge={144}
                                 value={c.image}
                                 hint="Ctrl+V או קובץ"
-                                onChange={(image) => {
-                                  if (!image) {
-                                    patchCap(c.id, { image: undefined });
-                                    return;
-                                  }
-                                  void uploadCmsImage("capabilities", c.id, image)
-                                    .then((url) => patchCap(c.id, { image: url }))
-                                    .catch(() => patchCap(c.id, { image }));
-                                }}
+                                onChange={(image) => takeCmsImage("capabilities", c.id, image, (url) => patchCap(c.id, { image: url }))}
                               />
                             </Field>
                           </div>
@@ -489,15 +473,7 @@ export function Cms() {
                     value={b.image}
                     maxEdge={160}
                     hint="לחצו בתיבה ואז Ctrl+V, או גררו PNG. הרקע נשאר שקוף."
-                    onChange={(image) => {
-                      if (!image) {
-                        patchBadge(b.id, { image: undefined });
-                        return;
-                      }
-                      void uploadCmsImage("badges", b.id, image)
-                        .then((url) => patchBadge(b.id, { image: url }))
-                        .catch(() => patchBadge(b.id, { image }));
-                    }}
+                    onChange={(image) => takeCmsImage("badges", b.id, image, (url) => patchBadge(b.id, { image: url }))}
                   />
                 </Field>
                 <button className="small" onClick={() => setData((d) => ({ ...d, badges: d.badges.filter((x) => x.id !== b.id) }))}>מחיקת באדג׳</button>
@@ -615,6 +591,15 @@ export function Cms() {
       ...d,
       meetings: [...d.meetings, { id: newId("meet"), title: "מפגש חדש", topic: "צוות", datetime: new Date().toISOString().slice(0, 16), location: "", description: "" }],
     }));
+  }
+  function takeCmsImage(folder: string, id: string, image: string, apply: (url: string) => void) {
+    if (!image) {
+      apply("");
+      return;
+    }
+    void uploadCmsImage(folder, id, image)
+      .then((url) => apply(url))
+      .catch(() => window.alert("העלאת התמונה נכשלה. נסו שוב — היא לא נשמרה כקובץ כבד במסמך."));
   }
   function patchBadge(id: string, patch: Partial<BadgeDef>) {
     setData((d) => ({ ...d, badges: d.badges.map((b) => (b.id === id ? normalizeBadge({ ...b, ...patch }) : b)) }));

@@ -182,6 +182,15 @@ next.badges = await Promise.all(
   ),
 );
 
+const fresh = (await getDoc(doc(db, "content", "app"))).data() ?? data;
+function keep(a = [], b = []) {
+  const map = new Map(b.map((x) => [x.id, x]));
+  return a.map((x) => (x.image || !map.get(x.id)?.image ? x : { ...x, image: map.get(x.id).image }));
+}
+next.tools = keep(next.tools, fresh.tools);
+next.capabilities = keep(next.capabilities, fresh.capabilities);
+next.badges = keep(next.badges, fresh.badges);
+
 next.settings = {
   ...(next.settings ?? {}),
   contentUpdatedAt: new Date().toISOString(),

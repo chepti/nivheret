@@ -60,7 +60,7 @@ export async function uploadLessonImage(lessonId: string, dataUrl: string): Prom
 export async function uploadCmsImage(folder: string, id: string, dataUrl: string): Promise<string> {
   if (!dataUrl.startsWith("data:image")) return dataUrl;
   const fb = getFirebase();
-  if (!fb) return dataUrl;
+  if (!fb) throw new Error("אין חיבור לאחסון");
   const blob = dataUrlToBlob(dataUrl);
   const ext = blob.type.includes("png") ? "png" : "jpg";
   const fileRef = ref(fb.storage, `cms/${folder}/${id}.${ext}`);
