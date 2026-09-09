@@ -212,16 +212,22 @@ p { margin: 0 0 10px; color: var(--muted); line-height: 1.55; }
 .status-tag.product { background: #7b61ff; color: #fff; }
 .status-tag.teach { background: #5b7cfa; color: #fff; }
 .mark-summary { padding: 12px 16px; margin: 12px 0 4px; border-radius: 22px; }
-.wish-form { display: grid; gap: 10px; margin-top: 12px; }
-.wish-list { list-style: none; padding: 0; margin: 16px 0 0; }
+.wish-box { padding: 12px 14px; margin-top: 16px; }
+.wish-box h2 { font-size: 1.15rem; margin: 0 0 8px; }
+.wish-form { display: grid; gap: 8px; margin-top: 0; }
+.wish-form .cms-field { margin-bottom: 0; }
+.wish-form .field { padding: 8px 12px; border-radius: 16px; }
+.wish-cap { min-height: 96px; resize: vertical; line-height: 1.45; }
+.wish-list { list-style: none; padding: 0; margin: 10px 0 0; }
 .wish-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
-  padding: 10px 0;
+  padding: 8px 0;
   border-top: 1px solid #f3ead6;
 }
+.wish-item strong { white-space: pre-wrap; }
 
 .check-row {
   display: flex; align-items: flex-start; gap: 10px;

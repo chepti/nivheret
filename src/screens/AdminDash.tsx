@@ -92,7 +92,7 @@ export function AdminDash() {
             <div className="clay compact-card" style={{ marginBottom: 12 }}>
               <h2 style={{ marginTop: 0 }}>בקשות לנושאים נוספים</h2>
               {(data.wishes ?? []).slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((w) => (
-                <p key={w.id} className="small" style={{ margin: "6px 0" }}>
+                <p key={w.id} className="small" style={{ margin: "6px 0", whiteSpace: "pre-wrap" }}>
                   <strong>{w.capabilityTitle}</strong>
                   <span className="muted"> · {w.toolName} · {teacherName(data, w.teacherId)}</span>
                 </p>

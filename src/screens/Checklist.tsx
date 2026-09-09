@@ -195,9 +195,8 @@ export function Checklist() {
         );
       })}
 
-      <section className="clay" style={{ padding: 18, marginTop: 22 }}>
-        <h2 style={{ marginTop: 0 }}>נושא נוסף שרוצים ללמוד</h2>
-        <p className="small">אם חסר כלי או יכולת בטופס — מוסיפים כאן. ההנהלה רואה את הבקשות.</p>
+      <section className="clay wish-box">
+        <h2>רוצה ללמוד עוד משהו?</h2>
         <div className="wish-form">
           <label className="cms-field">
             <span>כלי</span>
@@ -216,7 +215,13 @@ export function Checklist() {
           )}
           <label className="cms-field">
             <span>יכולת</span>
-            <input className="field" value={wishCap} onChange={(e) => setWishCap(e.target.value)} placeholder="מה רוצים ללמוד בכלי הזה" />
+            <textarea
+              className="field wish-cap"
+              rows={4}
+              value={wishCap}
+              onChange={(e) => setWishCap(e.target.value)}
+              placeholder="מה רוצים ללמוד — אפשר כמה משפטים"
+            />
           </label>
           <button
             className="pill btn-yellow"
