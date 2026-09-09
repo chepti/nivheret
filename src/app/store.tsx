@@ -10,9 +10,10 @@ import {
 import { earnedBadgeIds, normalizeBadge } from "../lib/badges";
 import { completeGoogleRedirect, firebaseEnabled, signInWithGoogle, signOutGoogle } from "../lib/firebase";
 import { emptyResponse } from "../lib/status";
-import { dropUnwantedContent, loadData, loadSession, normalizeContent, saveData, saveSession, unionBadges, unionCapabilities, unionLessons, unionTools } from "../lib/storage";
+import { dropUnwantedContent, loadData, loadSession, newId, normalizeContent, saveData, saveSession, unionBadges, unionCapabilities, unionLessons, unionTools } from "../lib/storage";
 import {
   deleteTeacher,
+  deleteWish,
   pullRemote,
   pushContent,
   pushPair,
@@ -20,6 +21,7 @@ import {
   pushResponse,
   pushRsvp,
   pushTeacher,
+  pushWish,
   seedIfEmpty,
   watchShared,
 } from "../lib/sync";
@@ -31,6 +33,7 @@ import type {
   Reaction,
   Session,
   Teacher,
+  TopicWish,
 } from "../lib/types";
 
 const CONTENT_KEYS = [
@@ -93,6 +96,8 @@ type Store = {
   upsertRsvp: (patch: Partial<MeetingRsvp> & { meetingId: string }) => void;
   upsertReaction: (patch: Partial<Reaction> & { capabilityId: string }) => void;
   upsertPair: (pair: LearningPair) => void;
+  addWish: (toolId: string, toolName: string, capabilityTitle: string) => void;
+  removeWish: (id: string) => void;
   myBadges: string[];
 };
 
@@ -171,6 +176,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             rsvps: remote.rsvps ?? prev.rsvps,
             reactions: remote.reactions ?? prev.reactions,
             pairs: remote.pairs ?? prev.pairs,
+            wishes: remote.wishes ?? prev.wishes ?? [],
             capabilities: keepLocalContent ? recovered!.capabilities : remoteClean.capabilities,
             lessons: keepLocalContent ? recovered!.lessons : remoteClean.lessons,
             meetings: keepLocalContent ? recovered!.meetings : remoteClean.meetings ?? remote.meetings ?? prev.meetings,
@@ -216,6 +222,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               ...incoming,
               ...("responses" in part && part.responses
                 ? { responses: mergeResponses(prev.responses, part.responses) }
+                : {}),
+              ...("wishes" in part && part.wishes
+                ? { wishes: part.wishes }
                 : {}),
             };
             if (incoming.lessons) {
@@ -462,6 +471,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const addWish: Store["addWish"] = (toolId, toolName, capabilityTitle) => {
+    if (!session) return;
+    const row: TopicWish = {
+      id: newId("wish"),
+      teacherId: session.teacherId,
+      toolId: toolId || undefined,
+      toolName: toolName.trim(),
+      capabilityTitle: capabilityTitle.trim(),
+      createdAt: new Date().toISOString(),
+    };
+    setDataState((prev) => ({ ...prev, wishes: [...(prev.wishes ?? []), row] }));
+    void pushWish(row);
+  };
+
+  const removeWish: Store["removeWish"] = (id) => {
+    setDataState((prev) => ({ ...prev, wishes: (prev.wishes ?? []).filter((w) => w.id !== id) }));
+    void deleteWish(id);
+  };
+
   const myBadges = useMemo(
     () => (session ? earnedBadgeIds(data, session.teacherId) : []),
     [data, session],
@@ -486,6 +514,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     upsertRsvp,
     upsertReaction,
     upsertPair,
+    addWish,
+    removeWish,
     myBadges,
   };
 

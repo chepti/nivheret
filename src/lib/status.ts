@@ -19,13 +19,13 @@ export function primaryStatus(r?: CapabilityResponse): StatusKey {
 
 export const STATUS_META: Record<
   StatusKey,
-  { label: string; color: string; soft: string }
+  { label: string; color: string; soft: string; mark: string }
 > = {
-  empty: { label: "טרם סומן", color: "#9aa3ad", soft: "#eef1f4" },
-  want: { label: "רוצה ללמוד", color: "#e8a317", soft: "#fff3d1" },
-  mastered: { label: "שולט", color: "#2bb39a", soft: "#d9f5ef" },
-  product: { label: "יש תוצר", color: "#7b61ff", soft: "#ebe6ff" },
-  teach: { label: "מלמד", color: "#5b7cfa", soft: "#e8eeff" },
+  empty: { label: "טרם סומן", color: "#9aa3ad", soft: "#eef1f4", mark: "○" },
+  want: { label: "רוצה ללמוד", color: "#e8a317", soft: "#fff3d1", mark: "✓" },
+  mastered: { label: "שולט", color: "#2bb39a", soft: "#d9f5ef", mark: "✓" },
+  product: { label: "יש תוצר", color: "#7b61ff", soft: "#ebe6ff", mark: "✓" },
+  teach: { label: "מלמד", color: "#5b7cfa", soft: "#e8eeff", mark: "✓" },
 };
 
 export function emptyResponse(teacherId: string, capabilityId: string): CapabilityResponse {

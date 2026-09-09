@@ -69,6 +69,15 @@ export type Lesson = {
   autoCompleteOnQuiz: boolean;
 };
 
+export type TopicWish = {
+  id: string;
+  teacherId: string;
+  toolId?: string;
+  toolName: string;
+  capabilityTitle: string;
+  createdAt: string;
+};
+
 export type CapabilityResponse = {
   teacherId: string;
   capabilityId: string;
@@ -156,6 +165,7 @@ export type AppData = {
   meetings: Meeting[];
   rsvps: MeetingRsvp[];
   pairs: LearningPair[];
+  wishes: TopicWish[];
   badges: BadgeDef[];
   settings: Settings;
 };

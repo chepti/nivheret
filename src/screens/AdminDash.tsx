@@ -12,6 +12,7 @@ import {
   openMail,
   suggestedPairs,
   teacherEmail,
+  teacherName,
 } from "../lib/leadership";
 import { formatHebDate, LEARN_HOW_LABEL } from "../lib/status";
 import type { LearnHow } from "../lib/types";
@@ -87,6 +88,17 @@ export function AdminDash() {
 
       {tab === "teach" && (
         <section className="compact-stack">
+          {(data.wishes ?? []).length > 0 && (
+            <div className="clay compact-card" style={{ marginBottom: 12 }}>
+              <h2 style={{ marginTop: 0 }}>בקשות לנושאים נוספים</h2>
+              {(data.wishes ?? []).slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((w) => (
+                <p key={w.id} className="small" style={{ margin: "6px 0" }}>
+                  <strong>{w.capabilityTitle}</strong>
+                  <span className="muted"> · {w.toolName} · {teacherName(data, w.teacherId)}</span>
+                </p>
+              ))}
+            </div>
+          )}
           {!insights.length && <p>עוד אין סימונים מדויקים. ברגע שמורות ימלאו — יופיעו כאן שמות ואיך הן רוצות ללמוד.</p>}
           {insights.map((row) => {
             const open = openCap === row.cap.id;

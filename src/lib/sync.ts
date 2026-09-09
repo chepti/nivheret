@@ -18,9 +18,10 @@ import type {
   MeetingRsvp,
   Reaction,
   Teacher,
+  TopicWish,
 } from "./types";
 
-export type ContentDoc = Omit<AppData, "teachers" | "responses" | "reactions" | "rsvps" | "pairs">;
+export type ContentDoc = Omit<AppData, "teachers" | "responses" | "reactions" | "rsvps" | "pairs" | "wishes">;
 
 function teacherDocId(email: string): string {
   return email.toLowerCase();
@@ -34,12 +35,13 @@ export async function pullRemote(): Promise<Partial<AppData> | null> {
   const fb = getFirebase();
   if (!fb) return null;
   const contentSnap = await getDoc(doc(fb.db, "content", "app"));
-  const [teachersSnap, responsesSnap, rsvpsSnap, reactionsSnap, pairsSnap] = await Promise.all([
+  const [teachersSnap, responsesSnap, rsvpsSnap, reactionsSnap, pairsSnap, wishesSnap] = await Promise.all([
     getDocs(collection(fb.db, "teachers")),
     getDocs(collection(fb.db, "responses")),
     getDocs(collection(fb.db, "rsvps")),
     getDocs(collection(fb.db, "reactions")),
     getDocs(collection(fb.db, "pairs")),
+    getDocs(collection(fb.db, "wishes")),
   ]);
   const remote: Partial<AppData> = {
     teachers: teachersSnap.docs.map((d) => d.data() as Teacher),
@@ -47,6 +49,7 @@ export async function pullRemote(): Promise<Partial<AppData> | null> {
     rsvps: rsvpsSnap.docs.map((d) => d.data() as MeetingRsvp),
     reactions: reactionsSnap.docs.map((d) => d.data() as Reaction),
     pairs: pairsSnap.docs.map((d) => d.data() as LearningPair),
+    wishes: wishesSnap.docs.map((d) => d.data() as TopicWish),
   };
   if (contentSnap.exists()) Object.assign(remote, contentSnap.data() as ContentDoc);
   return remote;
@@ -130,6 +133,18 @@ export async function pushPair(row: LearningPair): Promise<void> {
   await setDoc(doc(fb.db, "pairs", row.id), row);
 }
 
+export async function pushWish(row: TopicWish): Promise<void> {
+  const fb = getFirebase();
+  if (!fb) return;
+  await setDoc(doc(fb.db, "wishes", row.id), row);
+}
+
+export async function deleteWish(id: string): Promise<void> {
+  const fb = getFirebase();
+  if (!fb) return;
+  await deleteDoc(doc(fb.db, "wishes", id));
+}
+
 export function watchShared(onChange: (part: Partial<AppData>) => void): () => void {
   const fb = getFirebase();
   if (!fb) return () => undefined;
@@ -151,6 +166,9 @@ export function watchShared(onChange: (part: Partial<AppData>) => void): () => v
     }),
     onSnapshot(collection(fb.db, "pairs"), (snap) => {
       onChange({ pairs: snap.docs.map((d) => d.data() as LearningPair) });
+    }),
+    onSnapshot(collection(fb.db, "wishes"), (snap) => {
+      onChange({ wishes: snap.docs.map((d) => d.data() as TopicWish) });
     }),
   ];
   return () => unsub.forEach((fn) => fn());

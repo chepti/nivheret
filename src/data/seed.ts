@@ -467,6 +467,7 @@ export function createSeed(): AppData {
     meetings,
     rsvps: [],
     pairs: [],
+    wishes: [],
     badges,
     settings,
   };

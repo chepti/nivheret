@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import { navigate } from "../app/router";
 import { useStore } from "../app/store";
 import { ClayIcon, ItemThumb } from "../components/ClayIcons";
@@ -12,10 +12,13 @@ import type { LearnHow } from "../lib/types";
 import { ToolOrbit } from "../viz/ToolOrbit";
 
 export function Checklist() {
-  const { data, session, upsertResponse, responseOf } = useStore();
+  const { data, session, upsertResponse, responseOf, addWish, removeWish } = useStore();
   const [openId, setOpenId] = useState<string | null>(null);
   const [savedFlash, setSavedFlash] = useState(false);
   const [productCap, setProductCap] = useState<string | null>(null);
+  const [wishTool, setWishTool] = useState(data.tools[0]?.id ?? "");
+  const [wishToolOther, setWishToolOther] = useState("");
+  const [wishCap, setWishCap] = useState("");
 
   useEffect(() => {
     if (!session) navigate("welcome");
@@ -36,6 +39,16 @@ export function Checklist() {
     return ids.size;
   }, [data.responses]);
 
+  const formCaps = useMemo(
+    () => data.capabilities.filter((c) => !isDroppedCapability(c.id, c.title)),
+    [data.capabilities],
+  );
+  const markedCount = formCaps.filter((c) => primaryStatus(responseOf(c.id)) !== "empty").length;
+  const myWishes = useMemo(
+    () => (data.wishes ?? []).filter((w) => w.teacherId.toLowerCase() === session?.teacherId.toLowerCase()),
+    [data.wishes, session],
+  );
+
   const liveLines = useMemo(() => {
     return data.capabilities
       .map((c) => {
@@ -53,6 +66,10 @@ export function Checklist() {
       {savedFlash && <div className="toast-save">נשמר</div>}
       <h1>הצ׳קליסט שלי</h1>
       <p>לחצו על יכולת, סמנו, ועברו הלאה — נשמר לבד.</p>
+      <div className="mark-summary clay">
+        <strong>{markedCount === formCaps.length && formCaps.length > 0 ? "הכול סומן" : `${markedCount} סומנו`}</strong>
+        <span className="small muted"> · {formCaps.length - markedCount} עוד בלי סימון · {formCaps.length} יכולות בטופס</span>
+      </div>
 
       {data.periods.map((period) => {
         const periodTools = data.tools.filter((t) => t.periodId === period.id).sort((a, b) => a.order - b.order);
@@ -68,6 +85,7 @@ export function Checklist() {
               const caps = data.capabilities
                 .filter((c) => c.toolId === tool.id && !isDroppedCapability(c.id, c.title))
                 .sort((a, b) => a.order - b.order);
+              const toolMarked = caps.filter((c) => primaryStatus(responseOf(c.id)) !== "empty").length;
               return (
                 <article key={tool.id} className="clay tool-block">
                   <div className="tool-head">
@@ -75,6 +93,11 @@ export function Checklist() {
                     <div className="tool-head-text">
                       <h2>{tool.name}</h2>
                       <p className="small">{tool.subtitle}</p>
+                      {caps.length > 0 && (
+                        <p className="small" style={{ fontWeight: 700 }}>
+                          {toolMarked}/{caps.length} סומנו{toolMarked === 0 ? " — עוד לא נגענו בכלי הזה" : ""}
+                        </p>
+                      )}
                     </div>
                   </div>
                   {caps.length === 0 ? (
@@ -94,6 +117,10 @@ export function Checklist() {
                             <span className="cap-line-text">
                               <strong>{cap.title}</strong>
                               <span className="small muted">{cap.description}</span>
+                            </span>
+                            <span className={`status-tag ${st}`} aria-label={STATUS_META[st].label}>
+                              <span aria-hidden>{STATUS_META[st].mark}</span>
+                              {STATUS_META[st].label}
                             </span>
                           </button>
                           {open && (
@@ -167,6 +194,60 @@ export function Checklist() {
           </section>
         );
       })}
+
+      <section className="clay" style={{ padding: 18, marginTop: 22 }}>
+        <h2 style={{ marginTop: 0 }}>נושא נוסף שרוצים ללמוד</h2>
+        <p className="small">אם חסר כלי או יכולת בטופס — מוסיפים כאן. ההנהלה רואה את הבקשות.</p>
+        <div className="wish-form">
+          <label className="cms-field">
+            <span>כלי</span>
+            <select className="field" value={wishTool} onChange={(e) => setWishTool(e.target.value)}>
+              {data.tools.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+              <option value="__other__">כלי אחר — לכתוב שם</option>
+            </select>
+          </label>
+          {wishTool === "__other__" && (
+            <label className="cms-field">
+              <span>שם הכלי</span>
+              <input className="field" value={wishToolOther} onChange={(e) => setWishToolOther(e.target.value)} placeholder="לדוגמה: Sites, Canva…" />
+            </label>
+          )}
+          <label className="cms-field">
+            <span>יכולת</span>
+            <input className="field" value={wishCap} onChange={(e) => setWishCap(e.target.value)} placeholder="מה רוצים ללמוד בכלי הזה" />
+          </label>
+          <button
+            className="pill btn-yellow"
+            disabled={!wishCap.trim() || (wishTool === "__other__" && !wishToolOther.trim())}
+            onClick={() => {
+              const tool = data.tools.find((t) => t.id === wishTool);
+              const toolName = wishTool === "__other__" ? wishToolOther.trim() : (tool?.name ?? "");
+              const toolId = wishTool === "__other__" ? "" : wishTool;
+              addWish(toolId, toolName, wishCap.trim());
+              setWishCap("");
+              setWishToolOther("");
+              flash();
+            }}
+          >
+            <Plus size={16} /> הוספה
+          </button>
+        </div>
+        {myWishes.length > 0 && (
+          <ul className="wish-list">
+            {myWishes.map((w) => (
+              <li key={w.id} className="wish-item">
+                <span>
+                  <strong>{w.capabilityTitle}</strong>
+                  <span className="small muted"> · {w.toolName}</span>
+                </span>
+                <button className="small" onClick={() => { removeWish(w.id); flash(); }}>הסרה</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {productCap && (
         <ProductDrawer
