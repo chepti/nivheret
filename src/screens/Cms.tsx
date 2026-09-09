@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { Award, BookOpen, CalendarDays, ChevronDown, ChevronLeft, GripVertical, Plus, Settings, Trash2, Users } from "lucide-react";
+import { Award, BookOpen, CalendarDays, ChevronDown, ChevronLeft, GripVertical, Plus, School, Settings, Trash2, Users } from "lucide-react";
 import { useStore } from "../app/store";
 import { GoogleGate } from "../components/GoogleGate";
 import { ClayIcon } from "../components/ClayIcons";
@@ -10,13 +10,14 @@ import { formatChapterText, parseChapterText, toEmbedUrl } from "../lib/html";
 import { METRIC_OPTIONS, normalizeBadge } from "../lib/badges";
 import { uploadCmsImage } from "../lib/media";
 import { newId } from "../lib/storage";
-import type { BadgeDef, BadgeMetric, Capability, Lesson, Meeting, Teacher, Tool } from "../lib/types";
+import type { BadgeDef, BadgeMetric, Capability, Lesson, Meeting, SchoolClass, SubjectArea, Teacher, Tool } from "../lib/types";
 
 type Node =
   | { kind: "home" }
   | { kind: "period"; id: string }
   | { kind: "tool"; id: string; tab: "info" | "caps" | "lessons" }
   | { kind: "meetings" }
+  | { kind: "school" }
   | { kind: "teachers" }
   | { kind: "badges" }
   | { kind: "settings" };
@@ -113,6 +114,9 @@ export function Cms() {
           <button className={`tree-item ${node.kind === "meetings" ? "on" : ""}`} onClick={() => setNode({ kind: "meetings" })}>
             <CalendarDays size={16} /> מפגשים
           </button>
+          <button className={`tree-item ${node.kind === "school" ? "on" : ""}`} onClick={() => setNode({ kind: "school" })}>
+            <School size={16} /> כיתות ותחומים
+          </button>
           <button className={`tree-item ${node.kind === "teachers" ? "on" : ""}`} onClick={() => setNode({ kind: "teachers" })}>
             <Users size={16} /> מורות
           </button>
@@ -141,6 +145,12 @@ export function Cms() {
               {node.kind === "tool" && node.tab === "caps" && <button className="pill btn-yellow" onClick={() => addCap(node.id)}><Plus size={16} /> יכולת</button>}
               {node.kind === "tool" && node.tab === "lessons" && <button className="pill btn-yellow" onClick={() => addLesson(node.id)}><Plus size={16} /> שיעור</button>}
               {node.kind === "meetings" && <button className="pill btn-yellow" onClick={addMeet}><Plus size={16} /> מפגש</button>}
+              {node.kind === "school" && (
+                <>
+                  <button className="pill btn-yellow" onClick={addClass}><Plus size={16} /> כיתה</button>
+                  <button className="pill btn-primary" onClick={addSubject}><Plus size={16} /> תחום דעת</button>
+                </>
+              )}
               {node.kind === "teachers" && <button className="pill btn-yellow" onClick={addTeacher}><Plus size={16} /> מורה</button>}
               {node.kind === "badges" && <button className="pill btn-yellow" onClick={addBadge}><Plus size={16} /> באדג׳</button>}
             </div>
@@ -398,6 +408,35 @@ export function Cms() {
             </div>
           )}
 
+          {node.kind === "school" && (
+            <div className="school-cms">
+              <p className="small">מזינים את הכיתות כמו ביומן — כולל מקבילות, בלי חוקיות. שכבה לדשבורד היא אופציונלי (למשל «ז» לז1/ז2). תחומי דעת הם צוותי המקצוע.</p>
+              <h2>כיתות</h2>
+              {(data.classrooms ?? []).slice().sort((a, b) => a.order - b.order).map((row) => (
+                <div key={row.id} className="clay cms-editor school-row">
+                  <Field label="שם הכיתה">
+                    <input className="field" value={row.name} onChange={(e) => patchClass(row.id, { name: e.target.value })} placeholder="לדוגמה: ז1, ח3, פנימייה א" />
+                  </Field>
+                  <Field label="שכבה לדשבורד (רשות)">
+                    <input className="field" value={row.layer} onChange={(e) => patchClass(row.id, { layer: e.target.value })} placeholder="ז / ח / יא…" />
+                  </Field>
+                  <button className="small" onClick={() => removeClass(row)}>מחיקה</button>
+                </div>
+              ))}
+              {!data.classrooms?.length && <p className="small muted">עוד אין כיתות. מוסיפים למעלה.</p>}
+              <h2 style={{ marginTop: 18 }}>תחומי דעת</h2>
+              {(data.subjects ?? []).slice().sort((a, b) => a.order - b.order).map((row) => (
+                <div key={row.id} className="clay cms-editor school-row subject">
+                  <Field label="שם התחום">
+                    <input className="field" value={row.name} onChange={(e) => patchSubject(row.id, { name: e.target.value })} placeholder="לדוגמה: אנגלית, תנ״ך" />
+                  </Field>
+                  <button className="small" onClick={() => removeSubject(row)}>מחיקה</button>
+                </div>
+              ))}
+              {!data.subjects?.length && <p className="small muted">עוד אין תחומים. מוסיפים למעלה.</p>}
+            </div>
+          )}
+
           {node.kind === "meetings" && data.meetings.map((m) => (
             <div key={m.id} className="clay cms-editor">
               <Field label="כותרת"><input className="field" value={m.title} onChange={(e) => patchMeet(m.id, { title: e.target.value })} /></Field>
@@ -506,6 +545,7 @@ export function Cms() {
     if (n.kind === "period") return data.periods.find((p) => p.id === n.id)?.name ?? "";
     if (n.kind === "tool") return data.tools.find((t) => t.id === n.id)?.name ?? "";
     if (n.kind === "meetings") return "מפגשי צוות";
+    if (n.kind === "school") return "כיתות ותחומי דעת";
     if (n.kind === "teachers") return "ספר מורות";
     if (n.kind === "badges") return "באדג׳ים";
     return "הגדרות";
@@ -596,6 +636,46 @@ export function Cms() {
       ...d,
       meetings: [...d.meetings, { id: newId("meet"), title: "מפגש חדש", topic: "צוות", datetime: new Date().toISOString().slice(0, 16), location: "", description: "" }],
     }));
+  }
+  function patchClass(id: string, patch: Partial<SchoolClass>) {
+    setData((d) => ({
+      ...d,
+      classrooms: (d.classrooms ?? []).map((row) => (row.id === id ? { ...row, ...patch } : row)),
+    }));
+  }
+  function patchSubject(id: string, patch: Partial<SubjectArea>) {
+    setData((d) => ({
+      ...d,
+      subjects: (d.subjects ?? []).map((row) => (row.id === id ? { ...row, ...patch } : row)),
+    }));
+  }
+  function addClass() {
+    setData((d) => {
+      const list = d.classrooms ?? [];
+      const max = list.reduce((n, row) => Math.max(n, row.order), 0);
+      return {
+        ...d,
+        classrooms: [...list, { id: newId("class"), name: "", layer: "", order: max + 1 }],
+      };
+    });
+  }
+  function addSubject() {
+    setData((d) => {
+      const list = d.subjects ?? [];
+      const max = list.reduce((n, row) => Math.max(n, row.order), 0);
+      return {
+        ...d,
+        subjects: [...list, { id: newId("subj"), name: "", order: max + 1 }],
+      };
+    });
+  }
+  function removeClass(row: SchoolClass) {
+    if (row.name && !window.confirm(`למחוק את כיתה ${row.name}?`)) return;
+    setData((d) => ({ ...d, classrooms: (d.classrooms ?? []).filter((x) => x.id !== row.id) }));
+  }
+  function removeSubject(row: SubjectArea) {
+    if (row.name && !window.confirm(`למחוק את תחום ${row.name}?`)) return;
+    setData((d) => ({ ...d, subjects: (d.subjects ?? []).filter((x) => x.id !== row.id) }));
   }
   function patchBadge(id: string, patch: Partial<BadgeDef>) {
     setData((d) => ({ ...d, badges: d.badges.map((b) => (b.id === id ? normalizeBadge({ ...b, ...patch }) : b)) }));

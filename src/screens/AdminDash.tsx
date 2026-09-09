@@ -3,6 +3,7 @@ import { useStore } from "../app/store";
 import { GoogleGate } from "../components/GoogleGate";
 import { PairDoneCheck } from "../components/PairDoneCheck";
 import { HeatMap } from "../viz/HeatMap";
+import { SkillSpread } from "../viz/SkillSpread";
 import { TeamRings } from "../viz/TeamRings";
 import { ToolOrbit } from "../viz/ToolOrbit";
 import {
@@ -75,6 +76,7 @@ export function AdminDash() {
             <h2>מפת חום</h2>
             <HeatMap />
           </div>
+          <SkillSpread />
           <h2>לפי מורה</h2>
           <TeamRings />
           <h2 style={{ marginTop: 18 }}>לפי כלי</h2>

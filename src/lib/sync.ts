@@ -183,6 +183,8 @@ function contentFrom(data: AppData): ContentDoc {
     lessons: data.lessons,
     meetings: data.meetings,
     badges: data.badges,
+    classrooms: data.classrooms ?? [],
+    subjects: data.subjects ?? [],
     settings: data.settings,
   })) as ContentDoc;
 }

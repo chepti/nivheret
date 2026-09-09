@@ -16,6 +16,23 @@ export type Teacher = {
   lastName: string;
   email: string;
   role: Role;
+  classIds?: string[];
+  subjectIds?: string[];
+};
+
+/** כיתה כפי שמופיעה ביומן, כולל מקבילה — בלי הנחה על חוקיות בשם. */
+export type SchoolClass = {
+  id: string;
+  name: string;
+  layer: string;
+  order: number;
+};
+
+/** תחום דעת / צוות מקצוע. */
+export type SubjectArea = {
+  id: string;
+  name: string;
+  order: number;
 };
 
 export type Period = {
@@ -167,6 +184,8 @@ export type AppData = {
   pairs: LearningPair[];
   wishes: TopicWish[];
   badges: BadgeDef[];
+  classrooms: SchoolClass[];
+  subjects: SubjectArea[];
   settings: Settings;
 };
 

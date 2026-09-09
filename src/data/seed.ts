@@ -469,6 +469,8 @@ export function createSeed(): AppData {
     pairs: [],
     wishes: [],
     badges,
+    classrooms: [],
+    subjects: [],
     settings,
   };
 }

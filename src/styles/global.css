@@ -236,6 +236,54 @@ p { margin: 0 0 10px; color: var(--muted); line-height: 1.55; }
 .check-row input { width: 18px; height: 18px; accent-color: #f5c518; margin-top: 2px; }
 
 .live-dash { margin-top: 22px; padding: 18px; }
+.live-dash-pulse { box-shadow: 0 0 0 4px #ffe27a, var(--shadow); }
+.fly-dot {
+  position: fixed;
+  inset: 0 auto auto 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 58% 42% 52% 48% / 42% 55% 45% 58%;
+  pointer-events: none;
+  z-index: 80;
+  box-shadow: 0 6px 14px rgba(70, 50, 10, 0.18);
+}
+.teach-box { padding: 12px 14px; margin: 12px 0 8px; }
+.teach-box.need { background: linear-gradient(180deg, #fff8dc, #fff); }
+.teach-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  text-align: right;
+}
+.teach-body { margin-top: 8px; }
+.chip-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip-wrap .pill { padding: 8px 12px; }
+.spread-card { padding: 12px 14px; margin-bottom: 10px; }
+.spread-line { color: var(--ink); margin: 0 0 6px; font-weight: 700; }
+.spread-tools { display: grid; gap: 6px; }
+.spread-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+.spread-bar {
+  position: relative;
+  height: 8px;
+  border-radius: 99px;
+  background: #f3ead6;
+  overflow: hidden;
+}
+.spread-bar .used,
+.spread-bar .mastered {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+}
+.spread-bar .used { background: #ffe27a; }
+.spread-bar .mastered { background: #2bb39a; }
+.school-row { display: grid; grid-template-columns: 1.4fr 0.8fr auto; gap: 10px; align-items: end; padding: 12px; margin-bottom: 10px; }
+.school-row.subject { grid-template-columns: 1fr auto; }
 .toast-save {
   position: fixed; top: 16px; inset-inline: 0; margin: auto; width: fit-content;
   background: #2bb39a; color: #fff; border-radius: 999px; padding: 8px 16px;
@@ -682,4 +730,6 @@ p { margin: 0 0 10px; color: var(--muted); line-height: 1.55; }
   .grid-2 { grid-template-columns: 1fr; }
   .app-shell { padding-inline: 14px; }
   .teacher-row { min-width: 640px; }
+  .school-row, .school-row.subject { grid-template-columns: 1fr; }
+  .spread-row { grid-template-columns: 1fr auto; }
 }

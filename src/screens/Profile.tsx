@@ -8,6 +8,7 @@ import { PairDoneCheck } from "../components/PairDoneCheck";
 import { teacherBadgeRows } from "../lib/badges";
 import { myPairs } from "../lib/leadership";
 import { LEARN_HOW_LABEL } from "../lib/status";
+import { TeachingPicker } from "../components/TeachingPicker";
 
 export function Profile() {
   const { data, session, teacher, responseOf } = useStore();
@@ -35,6 +36,7 @@ export function Profile() {
     <GoogleGate>
       <h1>שלום {teacher?.firstName ?? ""}</h1>
       <p dir="ltr" className="small">{session.email}</p>
+      <TeachingPicker embedded />
 
       <section className="clay" style={{ padding: 18, marginTop: 12 }}>
         <h2><Sparkles size={18} /> באדג׳ים</h2>

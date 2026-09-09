@@ -195,6 +195,8 @@ function mergeSeed(saved: AppData | null): AppData {
     pairs: saved.pairs ?? [],
     wishes: saved.wishes ?? [],
     badges: saved.badges?.length ? unionBadges(saved.badges, seed.badges) : seed.badges,
+    classrooms: saved.classrooms ?? seed.classrooms ?? [],
+    subjects: saved.subjects ?? seed.subjects ?? [],
     settings: { ...seed.settings, ...saved.settings },
   });
 }

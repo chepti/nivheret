@@ -44,6 +44,8 @@ const CONTENT_KEYS = [
   "lessons",
   "meetings",
   "badges",
+  "classrooms",
+  "subjects",
   "settings",
 ] as const;
 
@@ -74,6 +76,8 @@ function contentFingerprint(d: Partial<AppData>): string {
     lessons: d.lessons,
     meetings: d.meetings,
     badges: d.badges,
+    classrooms: d.classrooms,
+    subjects: d.subjects,
   });
 }
 
@@ -98,6 +102,7 @@ type Store = {
   upsertPair: (pair: LearningPair) => void;
   addWish: (toolId: string, toolName: string, capabilityTitle: string) => void;
   removeWish: (id: string) => void;
+  saveMyTeaching: (classIds: string[], subjectIds: string[]) => void;
   myBadges: string[];
 };
 
@@ -177,6 +182,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             reactions: remote.reactions ?? prev.reactions,
             pairs: remote.pairs ?? prev.pairs,
             wishes: remote.wishes ?? prev.wishes ?? [],
+            classrooms: keepLocalContent ? recovered!.classrooms ?? [] : remote.classrooms ?? prev.classrooms ?? [],
+            subjects: keepLocalContent ? recovered!.subjects ?? [] : remote.subjects ?? prev.subjects ?? [],
             capabilities: keepLocalContent ? recovered!.capabilities : remoteClean.capabilities,
             lessons: keepLocalContent ? recovered!.lessons : remoteClean.lessons,
             meetings: keepLocalContent ? recovered!.meetings : remoteClean.meetings ?? remote.meetings ?? prev.meetings,
@@ -490,6 +497,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     void deleteWish(id);
   };
 
+  const saveMyTeaching: Store["saveMyTeaching"] = (classIds, subjectIds) => {
+    if (!session) return;
+    const teacherId = session.teacherId.toLowerCase();
+    const email = session.email.toLowerCase();
+    setDataState((prev) => {
+      const i = prev.teachers.findIndex(
+        (t) => t.id.toLowerCase() === teacherId || t.email.toLowerCase() === email,
+      );
+      if (i < 0) return prev;
+      const nextT = { ...prev.teachers[i], classIds, subjectIds };
+      const teachers = [...prev.teachers];
+      teachers[i] = nextT;
+      void pushTeacher(nextT);
+      return { ...prev, teachers };
+    });
+  };
+
   const myBadges = useMemo(
     () => (session ? earnedBadgeIds(data, session.teacherId) : []),
     [data, session],
@@ -516,6 +540,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     upsertPair,
     addWish,
     removeWish,
+    saveMyTeaching,
     myBadges,
   };
 

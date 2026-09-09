@@ -9,6 +9,9 @@ import { myPairs } from "../lib/leadership";
 import { isDroppedCapability } from "../lib/storage";
 import { LEARN_HOW_LABEL, primaryStatus, STATUS_META, type StatusKey } from "../lib/status";
 import type { LearnHow } from "../lib/types";
+import { TeachingPicker } from "../components/TeachingPicker";
+import { flyMarkToDash } from "../lib/flyMark";
+import { SkillSpread } from "../viz/SkillSpread";
 import { ToolOrbit } from "../viz/ToolOrbit";
 
 export function Checklist() {
@@ -66,6 +69,7 @@ export function Checklist() {
       {savedFlash && <div className="toast-save">נשמר</div>}
       <h1>הצ׳קליסט שלי</h1>
       <p>לחצו על יכולת, סמנו, ועברו הלאה — נשמר לבד.</p>
+      <TeachingPicker />
       <div className="mark-summary clay">
         <strong>{markedCount === formCaps.length && formCaps.length > 0 ? "הכול סומן" : `${markedCount} סומנו`}</strong>
         <span className="small muted"> · {formCaps.length - markedCount} עוד בלי סימון · {formCaps.length} יכולות בטופס</span>
@@ -129,7 +133,11 @@ export function Checklist() {
                                 <input
                                   type="checkbox"
                                   checked={r.wantToLearn}
-                                  onChange={(e) => { upsertResponse({ capabilityId: cap.id, wantToLearn: e.target.checked }); flash(); }}
+                                  onChange={(e) => {
+                                    if (e.target.checked) flyMarkToDash(e.target, STATUS_META.want.color);
+                                    upsertResponse({ capabilityId: cap.id, wantToLearn: e.target.checked });
+                                    flash();
+                                  }}
                                 />
                                 רוצה ללמוד
                               </label>
@@ -147,7 +155,15 @@ export function Checklist() {
                                 </div>
                               )}
                               <label className="check-row">
-                                <input type="checkbox" checked={r.mastered} onChange={(e) => { upsertResponse({ capabilityId: cap.id, mastered: e.target.checked }); flash(); }} />
+                                <input
+                                  type="checkbox"
+                                  checked={r.mastered}
+                                  onChange={(e) => {
+                                    if (e.target.checked) flyMarkToDash(e.target, STATUS_META.mastered.color);
+                                    upsertResponse({ capabilityId: cap.id, mastered: e.target.checked });
+                                    flash();
+                                  }}
+                                />
                                 כבר שולט
                               </label>
                               <label className="check-row">
@@ -155,6 +171,7 @@ export function Checklist() {
                                   type="checkbox"
                                   checked={r.hasProduct}
                                   onChange={(e) => {
+                                    if (e.target.checked) flyMarkToDash(e.target, STATUS_META.product.color);
                                     upsertResponse({ capabilityId: cap.id, hasProduct: e.target.checked });
                                     flash();
                                     if (e.target.checked) setProductCap(cap.id);
@@ -168,7 +185,15 @@ export function Checklist() {
                                 </button>
                               )}
                               <label className="check-row">
-                                <input type="checkbox" checked={r.readyToTeach} onChange={(e) => { upsertResponse({ capabilityId: cap.id, readyToTeach: e.target.checked }); flash(); }} />
+                                <input
+                                  type="checkbox"
+                                  checked={r.readyToTeach}
+                                  onChange={(e) => {
+                                    if (e.target.checked) flyMarkToDash(e.target, STATUS_META.teach.color);
+                                    upsertResponse({ capabilityId: cap.id, readyToTeach: e.target.checked });
+                                    flash();
+                                  }}
+                                />
                                 מוכן ללמד עמית 1:1
                               </label>
                               {myPairList.filter((p) => p.capabilityId === cap.id).map((p) => {
@@ -262,7 +287,7 @@ export function Checklist() {
         />
       )}
 
-      <section className="live-dash clay">
+      <section className="live-dash clay" id="live-dash">
         <h2>דשבורד חי</h2>
         <p>{answeredTeachers} מורות כבר ענו בטופס.</p>
         <div className="row" style={{ marginBottom: 12 }}>
@@ -277,6 +302,7 @@ export function Checklist() {
           })}
         </div>
         {liveLines.map((line) => <p key={line} style={{ color: "var(--ink)" }}>{line}</p>)}
+        <SkillSpread compact />
         <div className="grid-tools" style={{ marginTop: 8 }}>
           {data.tools.filter((t) => data.capabilities.some((c) => c.toolId === t.id)).map((tool) => (
             <ToolOrbit key={tool.id} tool={tool} showNames={false} />
