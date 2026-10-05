@@ -258,6 +258,7 @@ export function AdminDash() {
                     <span>
                       <strong>{m.title}</strong>
                       <span className="small muted"> {m.topic}</span>
+                      {m.hidden && <span className="small meet-hidden-tag"> מוסתר</span>}
                     </span>
                     <span className="small muted">
                       {coming.length} מגיעות · {came.length} השתתפו

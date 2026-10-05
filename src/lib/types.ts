@@ -126,6 +126,8 @@ export type Meeting = {
   location: string;
   description: string;
   joinUrl?: string;
+  /** מוסתר מהצוות כל עוד הפרטים לא סגורים. */
+  hidden?: boolean;
 };
 
 export type MeetingRsvp = {

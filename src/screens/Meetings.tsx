@@ -51,7 +51,10 @@ export function Meetings() {
         <button className="pill btn-primary" onClick={() => void remindNotify()}><Bell size={16} /> הפעילי תזכורות</button>
         <button className="pill btn-yellow" onClick={() => void remindInstall()}><HousePlus size={16} /> שמרי במסך הבית</button>
       </div>
-      {data.meetings.map((m) => {
+      {data.meetings.filter((m) => !m.hidden).length === 0 && (
+        <p>אין כרגע מפגש שפורסם.</p>
+      )}
+      {data.meetings.filter((m) => !m.hidden).map((m) => {
         const rsvp = data.rsvps.find((r) => r.teacherId === session.teacherId && r.meetingId === m.id);
         return (
           <article key={m.id} className="clay" style={{ padding: 16, marginBottom: 12 }}>

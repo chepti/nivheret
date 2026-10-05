@@ -366,6 +366,16 @@ p { margin: 0 0 10px; color: var(--muted); line-height: 1.55; }
   display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
 }
 .cms-editor { padding: 16px; margin: 10px 0; }
+.cms-editor.meet-hidden { background: #f7f4ee; }
+.meet-hidden-tag {
+  display: inline-block;
+  margin-inline-start: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #efe7d6;
+  color: var(--ink);
+  font-weight: 700;
+}
 .cms-editor.dragging { opacity: 0.45; }
 .cms-editor.drag-over { outline: 2px dashed #f5c518; outline-offset: 2px; }
 .cms-cap-head {

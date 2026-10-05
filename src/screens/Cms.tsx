@@ -483,7 +483,16 @@ export function Cms() {
           )}
 
           {node.kind === "meetings" && data.meetings.map((m) => (
-            <div key={m.id} className="clay cms-editor">
+            <div key={m.id} className={`clay cms-editor ${m.hidden ? "meet-hidden" : ""}`}>
+              <label className="check-row">
+                <input
+                  type="checkbox"
+                  checked={Boolean(m.hidden)}
+                  onChange={(e) => patchMeet(m.id, { hidden: e.target.checked })}
+                />
+                הסתר מהצוות — הפרטים עדיין לא סגורים
+              </label>
+              {m.hidden && <p className="small">המפגש לא מופיע במסך המפגשים. בהנהלה הוא נשאר, עם סימון «מוסתר».</p>}
               <Field label="כותרת"><input className="field" value={m.title} onChange={(e) => patchMeet(m.id, { title: e.target.value })} /></Field>
               <Field label="תחום"><input className="field" value={m.topic} onChange={(e) => patchMeet(m.id, { topic: e.target.value })} /></Field>
               <Field label="מועד"><input className="field" type="datetime-local" value={m.datetime.slice(0, 16)} onChange={(e) => patchMeet(m.id, { datetime: e.target.value })} /></Field>
