@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Bookmark, Heart, PartyPopper } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Bookmark, Check, ChevronLeft, ChevronRight, Heart, PartyPopper } from "lucide-react";
 import { navigate, type Route } from "../app/router";
 import { useStore } from "../app/store";
 import { ClayIcon, ItemThumb } from "../components/ClayIcons";
@@ -7,6 +7,50 @@ import { GoogleGate } from "../components/GoogleGate";
 import { ImagePaste } from "../components/ImagePaste";
 import { VideoChapters } from "../components/VideoChapters";
 import { embedWithStart, lessonHtml } from "../lib/html";
+import type { AppData, Lesson } from "../lib/types";
+
+function learningPath(data: AppData): { lesson: Lesson; toolId: string; toolName: string }[] {
+  const path: { lesson: Lesson; toolId: string; toolName: string }[] = [];
+  for (const tool of data.tools.slice().sort((a, b) => a.order - b.order)) {
+    const caps = data.capabilities.filter((c) => c.toolId === tool.id).slice().sort((a, b) => a.order - b.order);
+    const capOrder = new Map(caps.map((c, i) => [c.id, i]));
+    const lessons = data.lessons
+      .filter((l) => capOrder.has(l.capabilityId))
+      .sort((a, b) => (capOrder.get(a.capabilityId) ?? 0) - (capOrder.get(b.capabilityId) ?? 0));
+    for (const lesson of lessons) path.push({ lesson, toolId: tool.id, toolName: tool.name });
+  }
+  return path;
+}
+
+function ChapterPager({
+  prev,
+  next,
+  onPrev,
+  onNext,
+}: {
+  prev?: string;
+  next?: string;
+  onPrev?: () => void;
+  onNext?: () => void;
+}) {
+  if (!prev && !next) return null;
+  return (
+    <nav className="chapter-pager" aria-label="מעבר בין פרקים">
+      {prev && onPrev ? (
+        <button type="button" className="pill btn-primary" onClick={onPrev}>
+          <ChevronRight size={18} />
+          <span>הפרק הקודם<span className="small muted"> {prev}</span></span>
+        </button>
+      ) : <span />}
+      {next && onNext ? (
+        <button type="button" className="pill btn-yellow chapter-next" onClick={onNext}>
+          <span>הפרק הבא<span className="small muted"> {next}</span></span>
+          <ChevronLeft size={18} />
+        </button>
+      ) : <span />}
+    </nav>
+  );
+}
 
 export function Learn({ route }: { route: Route }) {
   const { data, responseOf, upsertResponse, upsertReaction, session } = useStore();
@@ -14,6 +58,7 @@ export function Learn({ route }: { route: Route }) {
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [celebrate, setCelebrate] = useState(false);
   const [videoStart, setVideoStart] = useState(0);
+  const path = useMemo(() => learningPath(data), [data]);
   useEffect(() => {
     setVideoStart(0);
   }, [route.id]);
@@ -28,6 +73,9 @@ export function Learn({ route }: { route: Route }) {
   if (lesson) {
     const cap = data.capabilities.find((c) => c.id === lesson.capabilityId);
     const resp = responseOf(lesson.capabilityId);
+    const here = path.findIndex((row) => row.lesson.id === lesson.id);
+    const prevLesson = here > 0 ? path[here - 1] : undefined;
+    const nextLesson = here >= 0 && here < path.length - 1 ? path[here + 1] : undefined;
     const checkQuiz = () => {
       const ok = lesson.quiz.every((q) => answers[q.id] === q.correctIndex);
       setQuizOk((p) => ({ ...p, [lesson.id]: ok }));
@@ -40,6 +88,9 @@ export function Learn({ route }: { route: Route }) {
     return (
       <GoogleGate>
         <button className="small muted" onClick={() => navigate("learn")}>חזרה ללמידה</button>
+        {resp.completedLearning && (
+          <div className="lesson-done-banner"><Check size={18} /> הפרק הושלם</div>
+        )}
         <div className="lesson-hero">
           {(cap?.image || data.tools.find((t) => t.id === cap?.toolId)?.image) && (
             <ItemThumb
@@ -127,6 +178,12 @@ export function Learn({ route }: { route: Route }) {
             onChange={(dataUrl) => upsertReaction({ capabilityId: lesson.capabilityId, productImage: dataUrl })}
           />
         </div>
+        <ChapterPager
+          prev={prevLesson?.lesson.title}
+          next={nextLesson?.lesson.title}
+          onPrev={prevLesson ? () => navigate("lesson", prevLesson.lesson.id) : undefined}
+          onNext={nextLesson ? () => navigate("lesson", nextLesson.lesson.id) : undefined}
+        />
       </GoogleGate>
     );
   }
@@ -141,8 +198,15 @@ export function Learn({ route }: { route: Route }) {
         const lessons = data.lessons
           .filter((l) => capOrder.has(l.capabilityId))
           .sort((a, b) => (capOrder.get(a.capabilityId) ?? 0) - (capOrder.get(b.capabilityId) ?? 0));
+        const chapters = path.reduce<{ id: string; name: string }[]>((acc, row) => {
+          if (!acc.some((t) => t.id === row.toolId)) acc.push({ id: row.toolId, name: row.toolName });
+          return acc;
+        }, []);
+        const chapterAt = chapters.findIndex((t) => t.id === tool.id);
+        const prevChapter = chapterAt > 0 ? chapters[chapterAt - 1] : undefined;
+        const nextChapter = chapterAt >= 0 && chapterAt < chapters.length - 1 ? chapters[chapterAt + 1] : undefined;
         return (
-          <article key={tool.id} className="clay tool-block">
+          <article key={tool.id} id={`learn-${tool.id}`} className="clay tool-block">
             <div className="tool-head">
               {tool.image ? <ItemThumb image={tool.image} size={128} shape="free" /> : <ClayIcon name={tool.icon} bg={tool.color} />}
               <div className="tool-head-text">
@@ -154,15 +218,27 @@ export function Learn({ route }: { route: Route }) {
               const r = responseOf(l.capabilityId);
               const lessonCap = caps.find((c) => c.id === l.capabilityId);
               return (
-                <button key={l.id} className="clay cap-card cap-line" onClick={() => navigate("lesson", l.id)}>
+                <button key={l.id} className={`clay cap-card cap-line ${r.completedLearning ? "lesson-done" : ""}`} onClick={() => navigate("lesson", l.id)}>
                   {lessonCap?.image && <ItemThumb image={lessonCap.image} size={56} shape="free" />}
                   <span className="cap-line-text">
                     <strong>{l.title}</strong>
-                    <span className="small muted">{r.completedLearning ? "הושלם ✓" : r.savedForLater ? "שמור להמשך" : "פתחי שיעור"}</span>
+                    {r.completedLearning ? (
+                      <span className="done-badge"><Check size={15} /> הושלם</span>
+                    ) : (
+                      <span className="small muted">{r.savedForLater ? "שמור להמשך" : "פתחי שיעור"}</span>
+                    )}
                   </span>
                 </button>
               );
             })}
+            {!!lessons.length && (
+              <ChapterPager
+                prev={prevChapter?.name}
+                next={nextChapter?.name}
+                onPrev={prevChapter ? () => document.getElementById(`learn-${prevChapter.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" }) : undefined}
+                onNext={nextChapter ? () => document.getElementById(`learn-${nextChapter.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" }) : undefined}
+              />
+            )}
           </article>
         );
       })}

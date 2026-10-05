@@ -150,7 +150,47 @@ p { margin: 0 0 10px; color: var(--muted); line-height: 1.55; }
   box-shadow: 0 2px 6px rgba(0,0,0,0.12);
   flex-shrink: 0;
 }
-.tool-block { padding: 22px 20px 18px; margin-bottom: 16px; }
+.tool-block { padding: 22px 20px 18px; margin-bottom: 16px; scroll-margin-top: 12px; }
+.chapter-pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.chapter-pager .pill { max-width: 100%; }
+.chapter-pager .chapter-next { margin-inline-start: auto; }
+.chapter-pager .small { display: block; font-weight: 600; }
+.chapter-pager .btn-yellow .small { color: #3d3208; }
+.lesson-done {
+  background: #e5f8f3;
+  border: 2px solid #1fa58c;
+  box-shadow: 0 8px 18px rgba(31, 165, 140, 0.16);
+}
+.done-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  margin-top: 4px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #1fa58c;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+.lesson-done-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #1fa58c;
+  color: #fff;
+  font-weight: 800;
+}
 .tool-block .cap-card { margin-top: 10px; }
 .tool-head {
   display: flex;
