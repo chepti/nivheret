@@ -64,10 +64,13 @@ function tidyDescription(text: string): string {
 
 export function sanitizeCapabilityDescription(description: string): string {
   let next = description ?? "";
+  let stripped = false;
   for (const chunk of EXTRA_DESCRIPTION_CHUNKS) {
+    if (!next.includes(chunk)) continue;
     next = next.split(chunk).join("");
+    stripped = true;
   }
-  return tidyDescription(next);
+  return stripped ? tidyDescription(next) : next;
 }
 
 export function dropUnwantedContent<T extends Pick<AppData, "capabilities" | "lessons"> & Partial<Pick<AppData, "meetings" | "badges" | "settings" | "tools">>>(data: T): T {

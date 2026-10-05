@@ -16,20 +16,19 @@ export function RichTextEditor({ value, onChange, lessonId }: Props) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!box.current) return;
-    box.current.innerHTML = value || "";
+    const el = box.current;
+    if (!el) return;
+    el.innerHTML = value || "";
     last.current = value;
+    // נטען פעם אחת. עדכון מההקלדה לא מחזיר את ה־HTML, כדי שרווח ושורה לא יימחקו.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonId]);
 
-  useEffect(() => {
-    if (!box.current || value === last.current) return;
-    if (document.activeElement === box.current) return;
-    box.current.innerHTML = value || "";
-    last.current = value;
-  }, [value]);
-
   const emit = () => {
-    const html = sanitizeHtml(box.current?.innerHTML ?? "");
+    const el = box.current;
+    if (!el) return;
+    const html = sanitizeHtml(el.innerHTML);
+    if (html === last.current) return;
     last.current = html;
     onChange(html);
   };
@@ -82,7 +81,14 @@ export function RichTextEditor({ value, onChange, lessonId }: Props) {
         className="rich-box lesson-html"
         contentEditable
         dir="rtl"
-        data-placeholder="כתבי כאן. אפשר להדביק תמונה עם Ctrl+V."
+        data-placeholder="כתבו כאן. Enter יורד שורה. אפשר להדביק תמונה עם Ctrl+V."
+        onKeyDown={(e) => {
+          if (e.key !== "Enter") return;
+          e.preventDefault();
+          const broke = document.execCommand("insertLineBreak");
+          if (!broke) document.execCommand("insertHTML", false, "<br>");
+          emit();
+        }}
         onInput={emit}
         onPaste={(e) => {
           const item = [...(e.clipboardData?.items ?? [])].find((i) => i.type.startsWith("image/"));

@@ -26,6 +26,13 @@ export function sanitizeHtml(html: string): string {
       }
       if (child.nodeType !== Node.ELEMENT_NODE) return;
       const el = child as HTMLElement;
+      if (el.tagName === "DIV") {
+        const p = el.ownerDocument.createElement("p");
+        while (el.firstChild) p.appendChild(el.firstChild);
+        el.replaceWith(p);
+        walk(p);
+        return;
+      }
       if (!ALLOWED.has(el.tagName)) {
         const parent = el.parentNode;
         while (el.firstChild) parent?.insertBefore(el.firstChild, el);

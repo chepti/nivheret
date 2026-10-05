@@ -6,7 +6,7 @@ import { ClayIcon } from "../components/ClayIcons";
 import { CloudSyncIcon } from "../components/CloudSyncIcon";
 import { ImagePaste } from "../components/ImagePaste";
 import { RichTextEditor } from "../components/RichTextEditor";
-import { formatChapterText, parseChapterText, toEmbedUrl } from "../lib/html";
+import { formatChapterText, parseChapterText, toEmbedUrl, youtubeId } from "../lib/html";
 import { METRIC_OPTIONS, normalizeBadge } from "../lib/badges";
 import { uploadCmsImage } from "../lib/media";
 import { newId } from "../lib/storage";
@@ -21,6 +21,37 @@ type Node =
   | { kind: "teachers" }
   | { kind: "badges" }
   | { kind: "settings" };
+
+function videoPreviewSrc(raw: string): string | null {
+  const url = raw.trim();
+  if (!url) return null;
+  const id = youtubeId(url);
+  if (id) return `https://www.youtube.com/embed/${id}?rel=0`;
+  if (/^https:\/\/.+/i.test(url) && /embed|player\.vimeo|drive\.google/i.test(url)) return url;
+  return null;
+}
+
+function ChaptersEditor({
+  chapters,
+  onChange,
+}: {
+  chapters: { t: number; label: string }[];
+  onChange: (next: { t: number; label: string }[]) => void;
+}) {
+  const [text, setText] = useState(() => formatChapterText(chapters));
+  return (
+    <textarea
+      className="field cms-chapters"
+      placeholder={"00:00 פתיחה\n01:20 השלב הבא"}
+      value={text}
+      onChange={(e) => {
+        const next = e.target.value;
+        setText(next);
+        onChange(parseChapterText(next));
+      }}
+    />
+  );
+}
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -337,16 +368,30 @@ export function Cms() {
                           <input
                             className="field"
                             dir="ltr"
+                            placeholder="https://www.youtube.com/watch?v=…"
                             value={l.videoUrl ?? ""}
-                            onChange={(e) => patchLesson(l.id, { videoUrl: toEmbedUrl(e.target.value) })}
+                            onChange={(e) => patchLesson(l.id, { videoUrl: e.target.value })}
+                            onBlur={(e) => {
+                              const next = toEmbedUrl(e.target.value);
+                              if (next !== (l.videoUrl ?? "")) patchLesson(l.id, { videoUrl: next });
+                            }}
                           />
+                          {videoPreviewSrc(l.videoUrl ?? "") && (
+                            <div className="cms-video">
+                              <iframe
+                                title={l.title || "תצוגת סרטון"}
+                                src={videoPreviewSrc(l.videoUrl ?? "") ?? ""}
+                                allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                              />
+                            </div>
+                          )}
                         </Field>
                         <Field label="פרקים (שורה: 0:00 כותרת)">
-                          <textarea
-                            className="field cms-chapters"
-                            placeholder={"00:00 פתיחה\n01:20 השלב הבא"}
-                            value={formatChapterText(l.chapters ?? [])}
-                            onChange={(e) => patchLesson(l.id, { chapters: parseChapterText(e.target.value) })}
+                          <ChaptersEditor
+                            key={l.id}
+                            chapters={l.chapters ?? []}
+                            onChange={(chapters) => patchLesson(l.id, { chapters })}
                           />
                         </Field>
                         <div className="cms-quiz-box">
