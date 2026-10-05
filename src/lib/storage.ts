@@ -1,6 +1,5 @@
 import { createSeed } from "../data/seed";
-import type { AppData, BadgeDef, Capability, Lesson, Session, Tool } from "./types";
-import { neutralizeTeacherVoice } from "./voice";
+import type { AppData, BadgeDef, Capability, Lesson, Meeting, Session, Tool } from "./types";
 
 const DATA_KEY = "nivheret-data-v1";
 const SESSION_KEY = "nivheret-session-v1";
@@ -77,51 +76,12 @@ export function dropUnwantedContent<T extends Pick<AppData, "capabilities" | "le
   const capabilities = (data.capabilities ?? [])
     .filter((c) => !isDroppedCapability(c.id, c.title))
     .map((c) => {
-      const description = neutralizeTeacherVoice(sanitizeCapabilityDescription(c.description));
-      const title = neutralizeTeacherVoice(c.title);
-      return title === c.title && description === c.description ? c : { ...c, title, description };
+      const description = sanitizeCapabilityDescription(c.description);
+      return description === c.description ? c : { ...c, description };
     });
   const keep = new Set(capabilities.map((c) => c.id));
-  const lessons = (data.lessons ?? [])
-    .filter((l) => keep.has(l.capabilityId))
-    .map((l) => {
-      const title = neutralizeTeacherVoice(l.title);
-      const body = neutralizeTeacherVoice(l.body);
-      const quiz = l.quiz.map((q) => ({
-        ...q,
-        prompt: neutralizeTeacherVoice(q.prompt),
-        options: q.options.map((o) => neutralizeTeacherVoice(o)),
-      }));
-      return { ...l, title, body, quiz };
-    });
-  const meetings = data.meetings?.map((m) => ({
-    ...m,
-    title: neutralizeTeacherVoice(m.title),
-    description: neutralizeTeacherVoice(m.description),
-  }));
-  const badges = data.badges?.map((b) => ({
-    ...b,
-    title: neutralizeTeacherVoice(b.title),
-    description: neutralizeTeacherVoice(b.description),
-  }));
-  const tools = data.tools?.map((t) => ({
-    ...t,
-    name: neutralizeTeacherVoice(t.name),
-    subtitle: neutralizeTeacherVoice(t.subtitle),
-    description: neutralizeTeacherVoice(t.description),
-  }));
-  const settings = data.settings
-    ? { ...data.settings, praiseNote: neutralizeTeacherVoice(data.settings.praiseNote) }
-    : data.settings;
-  return {
-    ...data,
-    capabilities,
-    lessons,
-    ...(meetings ? { meetings } : {}),
-    ...(badges ? { badges } : {}),
-    ...(tools ? { tools } : {}),
-    ...(settings ? { settings } : {}),
-  };
+  const lessons = (data.lessons ?? []).filter((l) => keep.has(l.capabilityId));
+  return { ...data, capabilities, lessons };
 }
 
 /** שיעור/יכולת מקומיים גוברים על אותו מזהה בענן — בלי למחוק תמונה שכבר יש. */
@@ -131,52 +91,57 @@ export function keepImage<T extends { image?: string }>(preferred: T, fallback?:
   return { ...preferred, image: fallback.image };
 }
 
-export function unionById<T extends { id: string; image?: string }>(preferred: T[] = [], fallback: T[] = []): T[] {
+function bodyKey(item: { image?: string }): string {
+  const copy = { ...item };
+  delete copy.image;
+  return JSON.stringify(copy);
+}
+
+let seedCache: AppData | null = null;
+function seedDrafts(): AppData {
+  seedCache ??= createSeed();
+  return seedCache;
+}
+
+/** טיוטת הזרע לא דורסת עריכה שכבר בענן. עריכה מפורשת של אותו מזהה כן נשמרת. */
+export function unionById<T extends { id: string; image?: string }>(preferred: T[] = [], fallback: T[] = [], drafts: T[] = []): T[] {
+  const seed = new Map(drafts.map((d) => [d.id, bodyKey(d)]));
   const map = new Map<string, T>();
   for (const item of fallback) map.set(item.id, item);
-  for (const item of preferred) map.set(item.id, keepImage(item, map.get(item.id)));
+  for (const item of preferred) {
+    const prev = map.get(item.id);
+    const fp = seed.get(item.id);
+    if (prev && fp && bodyKey(item) === fp && bodyKey(prev) !== fp) {
+      map.set(item.id, keepImage(prev, item));
+      continue;
+    }
+    map.set(item.id, keepImage(item, prev));
+  }
   return [...map.values()];
 }
 
 export function unionLessons(local: Lesson[] = [], remote: Lesson[] = []): Lesson[] {
-  return unionById(local, remote);
+  return unionById(local, remote, seedDrafts().lessons);
 }
 
 export function unionCapabilities(local: Capability[] = [], remote: Capability[] = []): Capability[] {
-  return unionById(local, remote);
+  return unionById(local, remote, seedDrafts().capabilities);
 }
 
 export function unionTools(local: Tool[] = [], remote: Tool[] = []): Tool[] {
-  return unionById(local, remote);
+  return unionById(local, remote, seedDrafts().tools);
 }
 
 export function unionBadges(local: BadgeDef[] = [], remote: BadgeDef[] = []): BadgeDef[] {
-  return unionById(local, remote);
+  return unionById(local, remote, seedDrafts().badges);
 }
 
-/** אם לכלי אין אף יכולת — מוסיפים את טיוטות הזרע שלו, בלי לדרוס מה שכבר יש. */
-export function fillMissingCaps(existing: Capability[], drafts: Capability[]): Capability[] {
-  const haveId = new Set(existing.map((c) => c.id));
-  const toolsWith = new Set(existing.map((c) => c.toolId));
-  return [...existing, ...drafts.filter((d) => !haveId.has(d.id) && !toolsWith.has(d.toolId))];
-}
-
-/** מוסיפים טיוטה רק ליכולת שעדיין אין לה שיעור, בלי לדרוס קיים. */
-export function fillMissingLessons(existing: Lesson[], drafts: Lesson[]): Lesson[] {
-  const haveCap = new Set(existing.map((l) => l.capabilityId));
-  const haveId = new Set(existing.map((l) => l.id));
-  return [...existing, ...drafts.filter((d) => !haveId.has(d.id) && !haveCap.has(d.capabilityId))];
+export function unionMeetings(local: Meeting[] = [], remote: Meeting[] = []): Meeting[] {
+  return unionById(local, remote, seedDrafts().meetings);
 }
 
 export function normalizeContent<T extends Pick<AppData, "capabilities" | "lessons"> & Partial<Pick<AppData, "meetings" | "badges" | "settings" | "tools">>>(data: T): T {
-  const cleaned = dropUnwantedContent(data);
-  const seed = createSeed();
-  const capabilities = fillMissingCaps(cleaned.capabilities, seed.capabilities);
-  return {
-    ...cleaned,
-    capabilities,
-    lessons: fillMissingLessons(cleaned.lessons, seed.lessons),
-  };
+  return dropUnwantedContent(data);
 }
 
 function mergeSeed(saved: AppData | null): AppData {
@@ -188,16 +153,16 @@ function mergeSeed(saved: AppData | null): AppData {
     institutions: saved.institutions?.length ? saved.institutions : seed.institutions,
     teachers: saved.teachers?.length ? saved.teachers : seed.teachers,
     periods: saved.periods?.length ? saved.periods : seed.periods,
-    tools: saved.tools?.length ? unionTools(saved.tools, seed.tools) : seed.tools,
-    capabilities: fillMissingCaps(saved.capabilities ?? [], seed.capabilities),
-    lessons: fillMissingLessons(saved.lessons ?? [], seed.lessons),
+    tools: saved.tools?.length ? saved.tools : seed.tools,
+    capabilities: saved.capabilities ?? [],
+    lessons: saved.lessons ?? [],
     responses: saved.responses ?? [],
     reactions: saved.reactions ?? [],
     meetings: saved.meetings ?? seed.meetings,
     rsvps: saved.rsvps ?? [],
     pairs: saved.pairs ?? [],
     wishes: saved.wishes ?? [],
-    badges: saved.badges?.length ? unionBadges(saved.badges, seed.badges) : seed.badges,
+    badges: saved.badges?.length ? saved.badges : seed.badges,
     classrooms: saved.classrooms ?? seed.classrooms ?? [],
     subjects: saved.subjects ?? seed.subjects ?? [],
     settings: { ...seed.settings, ...saved.settings },

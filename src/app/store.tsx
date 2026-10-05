@@ -68,19 +68,6 @@ function mergeResponses(local: CapabilityResponse[], remote: CapabilityResponse[
   return [...map.values()];
 }
 
-function contentFingerprint(d: Partial<AppData>): string {
-  return JSON.stringify({
-    periods: d.periods,
-    tools: d.tools,
-    capabilities: d.capabilities,
-    lessons: d.lessons,
-    meetings: d.meetings,
-    badges: d.badges,
-    classrooms: d.classrooms,
-    subjects: d.subjects,
-  });
-}
-
 type Store = {
   data: AppData;
   session: Session | null;
@@ -137,85 +124,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await seedIfEmpty(local);
         const remote = await pullRemote();
         if (remote) {
-          const localAt = local.settings?.contentUpdatedAt;
-          const remoteAt = remote.settings?.contentUpdatedAt;
-          const sess = loadSession();
-          const adminHere = Boolean(
-            sess &&
-              (local.settings.adminEmails.includes(sess.email.toLowerCase()) ||
-                local.teachers.find((t) => t.id === sess.teacherId)?.role === "admin"),
-          );
-          const keepLocalContent =
-            newerStamp(localAt, remoteAt) ||
-            (adminHere && !remoteAt && contentFingerprint(local) !== contentFingerprint(remote));
-          const recovered = keepLocalContent
-            ? normalizeContent({
-                ...local,
-                capabilities: unionCapabilities(local.capabilities ?? [], remote.capabilities ?? []),
-                lessons: unionLessons(local.lessons ?? [], remote.lessons ?? []),
-                tools: unionTools(local.tools ?? [], remote.tools ?? []),
-                badges: unionBadges(local.badges ?? [], remote.badges ?? []),
-                settings: { ...local.settings, contentUpdatedAt: new Date().toISOString() },
-              })
-            : null;
-          const remoteClean = normalizeContent({
-            capabilities: unionCapabilities(local.capabilities ?? [], remote.capabilities ?? []),
-            lessons: unionLessons(local.lessons ?? [], remote.lessons ?? []),
-            meetings: remote.meetings ?? local.meetings,
-            badges: unionBadges(remote.badges ?? [], local.badges ?? []),
-            tools: unionTools(remote.tools ?? [], local.tools ?? []),
-            settings: remote.settings ?? local.settings,
-          });
-          const stripped =
-            JSON.stringify(remote.capabilities ?? []) !== JSON.stringify(remoteClean.capabilities) ||
-            JSON.stringify(remote.lessons ?? []) !== JSON.stringify(remoteClean.lessons) ||
-            JSON.stringify(remote.meetings ?? []) !== JSON.stringify(remoteClean.meetings ?? []) ||
-            JSON.stringify(remote.badges ?? []) !== JSON.stringify(remoteClean.badges ?? []) ||
-            JSON.stringify(remote.settings?.praiseNote) !== JSON.stringify(remoteClean.settings?.praiseNote);
           setDataState((prev) => ({
-            ...(recovered ?? prev),
-            ...(keepLocalContent ? {} : remote),
+            ...prev,
+            ...remote,
             teachers: remote.teachers?.length ? remote.teachers : prev.teachers,
-            badges: (keepLocalContent ? recovered!.badges : remoteClean.badges ?? remote.badges ?? prev.badges).map(normalizeBadge),
+            badges: (remote.badges ?? prev.badges).map(normalizeBadge),
             responses: mergeResponses(prev.responses, remote.responses ?? []),
             rsvps: remote.rsvps ?? prev.rsvps,
             reactions: remote.reactions ?? prev.reactions,
             pairs: remote.pairs ?? prev.pairs,
             wishes: remote.wishes ?? prev.wishes ?? [],
-            classrooms: keepLocalContent ? recovered!.classrooms ?? [] : remote.classrooms ?? prev.classrooms ?? [],
-            subjects: keepLocalContent ? recovered!.subjects ?? [] : remote.subjects ?? prev.subjects ?? [],
-            capabilities: keepLocalContent ? recovered!.capabilities : remoteClean.capabilities,
-            lessons: keepLocalContent ? recovered!.lessons : remoteClean.lessons,
-            meetings: keepLocalContent ? recovered!.meetings : remoteClean.meetings ?? remote.meetings ?? prev.meetings,
-            tools: keepLocalContent ? recovered!.tools : remoteClean.tools ?? remote.tools ?? prev.tools,
+            classrooms: remote.classrooms ?? prev.classrooms ?? [],
+            subjects: remote.subjects ?? prev.subjects ?? [],
+            capabilities: remote.capabilities?.length ? remote.capabilities : prev.capabilities,
+            lessons: remote.lessons?.length ? remote.lessons : prev.lessons,
+            meetings: remote.meetings ?? prev.meetings,
+            tools: remote.tools?.length ? remote.tools : prev.tools,
+            settings: { ...prev.settings, ...(remote.settings ?? {}) },
           }));
-          if (stripped && !recovered) {
-            skipRemoteContent.current = true;
-            void pushContent({
-              ...local,
-              ...remote,
-              ...remoteClean,
-              settings: { ...(remote.settings ?? local.settings), contentUpdatedAt: new Date().toISOString() },
-            }).finally(() => {
-              window.setTimeout(() => {
-                skipRemoteContent.current = false;
-              }, 400);
-            });
-          }
-          if (recovered) {
-            skipRemoteContent.current = true;
-            void pushContent(recovered)
-              .then(() => setCloudSave("saved"))
-              .catch((err) => {
-                console.error("pushContent", err);
-                setCloudSave("error");
-              })
-              .finally(() => {
-                window.setTimeout(() => {
-                  skipRemoteContent.current = false;
-                }, 400);
-              });
-          }
         }
         hydrated.current = true;
         stop = watchShared((part) => {

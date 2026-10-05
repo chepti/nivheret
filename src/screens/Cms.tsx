@@ -70,7 +70,6 @@ export function Cms() {
   const [dragCap, setDragCap] = useState<string | null>(null);
   const [overCap, setOverCap] = useState<string | null>(null);
   const [openLesson, setOpenLesson] = useState<string | null>(null);
-  const [openQuiz, setOpenQuiz] = useState<Record<string, boolean>>({});
 
   const tool = node.kind === "tool" ? data.tools.find((t) => t.id === node.id) : undefined;
   const period = node.kind === "period" ? data.periods.find((p) => p.id === node.id) : undefined;
@@ -189,7 +188,7 @@ export function Cms() {
 
           {node.kind === "home" && (
             <div className="cms-home">
-              <p>בחרו תקופה בעץ, ואז כלי — משם עורכים יכולות ושיעורים. כל שינוי נשמר לבד.</p>
+              <p>בחרו תקופה בעץ, ואז כלי — משם עורכים יכולות ושיעורים. השאלות יושבות בתוך השיעור. מה שכתוב נשמר כמו שכתבת.</p>
               <div className="grid-tools">
                 {data.periods.map((p) => (
                   <button key={p.id} className="clay cms-card" onClick={() => { setOpenPeriod(p.id); setNode({ kind: "period", id: p.id }); }}>
@@ -337,10 +336,12 @@ export function Cms() {
                 </>
               )}
 
-              {node.tab === "lessons" && data.lessons.filter((l) => data.capabilities.some((c) => c.id === l.capabilityId && c.toolId === tool.id)).map((l) => {
+              {node.tab === "lessons" && (
+                <>
+                  <p className="small">השאלות כאן למטה, בתוך השיעור. לסרטון שאסור להציג — «הסרת סרטון». הניסוח נשמר כמו שכתבת.</p>
+                  {data.lessons.filter((l) => data.capabilities.some((c) => c.id === l.capabilityId && c.toolId === tool.id)).map((l) => {
                 const cap = data.capabilities.find((c) => c.id === l.capabilityId);
                 const open = openLesson === l.id;
-                const quizOpen = Boolean(openQuiz[l.id]);
                 return (
                   <div key={l.id} className={`clay cms-editor ${open ? "" : "cms-folded"}`}>
                     <button type="button" className="cms-fold-head" onClick={() => setOpenLesson(open ? null : l.id)}>
@@ -386,6 +387,9 @@ export function Cms() {
                               />
                             </div>
                           )}
+                          {(l.videoUrl ?? "") !== "" && (
+                            <button type="button" className="small" onClick={() => patchLesson(l.id, { videoUrl: "" })}>הסרת סרטון</button>
+                          )}
                         </Field>
                         <Field label="פרקים (שורה: 0:00 כותרת)">
                           <ChaptersEditor
@@ -395,12 +399,8 @@ export function Cms() {
                           />
                         </Field>
                         <div className="cms-quiz-box">
-                          <button type="button" className="cms-fold-head slim" onClick={() => setOpenQuiz((q) => ({ ...q, [l.id]: !q[l.id] }))}>
-                            <span>שאלות תרגול · {l.quiz.length}</span>
-                            <ChevronDown size={16} className={quizOpen ? "chev open" : "chev"} />
-                          </button>
-                          {quizOpen && (
-                            <div className="cms-quiz-list">
+                          <div className="small" style={{ marginBottom: 8 }}>שאלות תרגול · {l.quiz.length}</div>
+                          <div className="cms-quiz-list">
                               {l.quiz.map((quiz, qi) => (
                                 <div key={quiz.id} className="cms-q">
                                   <label className="cms-q-prompt">
@@ -443,13 +443,14 @@ export function Cms() {
                                 )}
                               </div>
                             </div>
-                          )}
                         </div>
                       </div>
                     )}
                   </div>
                 );
               })}
+                </>
+              )}
             </div>
           )}
 
@@ -674,7 +675,6 @@ export function Cms() {
       }],
     }));
     setOpenLesson(id);
-    setOpenQuiz((q) => ({ ...q, [id]: true }));
   }
   function addQuiz(lessonId: string) {
     setData((d) => ({
