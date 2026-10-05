@@ -42,17 +42,34 @@ export function Profile() {
         <h2><Sparkles size={18} /> באדג׳ים</h2>
         <p className="small">צבעוני = הושג. השאר מחכים בשחור־לבן.</p>
         <div className="badge-row">
-          {badgeRows.map(({ badge, earned, text }) => (
-            <article key={badge.id} className={`badge-cell ${earned ? "earned" : ""}`} title={text}>
-              {badge.image ? (
-                <img src={badge.image} alt="" className="badge-face" />
-              ) : (
-                <div className="badge-face placeholder">{badge.title[0]}</div>
-              )}
-              <strong>{badge.title}</strong>
-              <span className="small muted">{text}</span>
-            </article>
-          ))}
+          {badgeRows.map(({ badge, earned, text, current, target }) => {
+            const pct = Math.min(100, Math.round((current / Math.max(target, 1)) * 100));
+            return (
+              <article key={badge.id} className={`badge-cell ${earned ? "earned" : ""}`} tabIndex={0}>
+                {badge.image ? (
+                  <img src={badge.image} alt="" className="badge-face" />
+                ) : (
+                  <div className="badge-face placeholder">{badge.title[0]}</div>
+                )}
+                <strong>{badge.title}</strong>
+                <div
+                  className="badge-bar"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={target}
+                  aria-valuenow={Math.min(current, target)}
+                  aria-label={text}
+                >
+                  <span style={{ width: `${pct}%` }} />
+                </div>
+                <div className="badge-tip" role="tooltip">
+                  <strong>{badge.title}</strong>
+                  <span className="badge-tip-count">{current} מתוך {target}</span>
+                  <span className="small">{text}</span>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </section>
 

@@ -481,6 +481,7 @@ p { margin: 0 0 10px; color: var(--muted); line-height: 1.55; }
   margin-top: 8px;
 }
 .badge-cell {
+  position: relative;
   width: calc(50% - 10px);
   max-width: 150px;
   text-align: center;
@@ -488,8 +489,63 @@ p { margin: 0 0 10px; color: var(--muted); line-height: 1.55; }
   flex-direction: column;
   align-items: center;
   gap: 6px;
+  outline: none;
 }
 .badge-cell strong { font-size: 0.88rem; }
+.badge-bar {
+  width: 86px;
+  height: 9px;
+  border-radius: 999px;
+  background: #efe6d2;
+  overflow: hidden;
+  margin-top: 2px;
+}
+.badge-bar span {
+  display: block;
+  height: 100%;
+  background: #f5c518;
+  border-radius: 999px;
+}
+.badge-cell.earned .badge-bar span { background: #1fa58c; }
+.badge-tip {
+  position: absolute;
+  z-index: 6;
+  bottom: calc(100% - 4px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  width: max-content;
+  max-width: 220px;
+  padding: 10px 12px 12px;
+  border-radius: 18px;
+  background: #fffdf8;
+  box-shadow: 0 12px 28px rgba(70, 50, 10, 0.16);
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.badge-tip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-top-color: #fffdf8;
+}
+.badge-tip-count {
+  font-weight: 800;
+  color: var(--ink);
+}
+.badge-cell:hover .badge-tip,
+.badge-cell:focus-visible .badge-tip,
+.badge-cell:focus-within .badge-tip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
 .badge-cell .badge-face {
   filter: grayscale(1);
   opacity: 0.72;
@@ -511,8 +567,6 @@ p { margin: 0 0 10px; color: var(--muted); line-height: 1.55; }
   font-size: 1.4rem; font-weight: 800;
 }
 .badge-cell.earned .badge-face.placeholder { background: #ffe56a; color: var(--ink); }
-.badge-bar { height: 8px; border-radius: 999px; background: #f1ead8; margin-top: 8px; overflow: hidden; }
-.badge-bar span { display: block; height: 100%; background: #f5c518; border-radius: 999px; }
 .profile-item {
   display: flex; justify-content: space-between; align-items: center; gap: 12px;
   padding: 10px 0;
